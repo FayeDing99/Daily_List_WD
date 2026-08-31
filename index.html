@@ -461,6 +461,7 @@
   .date-picker-btn.chosen{border-color:var(--accent);color:var(--accent);background:var(--accent-tint);}
   .field-row{display:flex;gap:10px;}
   .field-row .field{flex:1;}
+  #schedule-time-fields[hidden],#schedule-reminder-field[hidden]{display:none!important;}
 
   /* ---------- time wheel picker ---------- */
   .time-wheel-sheet{
@@ -866,7 +867,13 @@
         <button type="button" class="date-picker-btn" id="f-date-btn">选择日期</button>
         <input type="hidden" id="f-date">
       </div>
-      <div class="field-row">
+      <div class="field">
+        <label class="lead-toggle-label">
+          <input type="checkbox" id="f-time-enable" aria-controls="schedule-time-fields" aria-expanded="false">
+          设置具体的开始与结束时间
+        </label>
+      </div>
+      <div class="field-row" id="schedule-time-fields" hidden>
         <div class="field">
           <label>开始时间</label>
           <button type="button" class="time-picker-btn" id="f-start-btn">选择时间</button>
@@ -904,7 +911,7 @@
           <div class="repeat-note" id="repeat-note"></div>
         </div>
       </div>
-      <div class="field">
+      <div class="field" id="schedule-reminder-field" hidden>
         <label class="lead-toggle-label">
           <input type="checkbox" id="f-lead-enable" aria-controls="lead-amount-row" aria-expanded="false">
           除了到点提醒，我还想提前收到提醒
@@ -1148,7 +1155,10 @@
         if(!Array.isArray(day.recurringDone)) day.recurringDone=[];
         if(typeof day.journal!=="string") day.journal="";
         day.temp.forEach(migrateItem);
-        day.schedule.forEach(migrateItem);
+        day.schedule.forEach(item=>{
+          migrateItem(item);
+          if(typeof item.hasTime!=="boolean") item.hasTime=!!(item.start&&item.end);
+        });
       });
       return parsed;
     }catch(e){ return defaultState(); }
@@ -1160,6 +1170,27 @@
     if(!state.days[dateStr]) state.days[dateStr]={temp:[],schedule:[],recurringDone:[],journal:""};
     if(typeof state.days[dateStr].journal!=="string") state.days[dateStr].journal="";
     return state.days[dateStr];
+  }
+  function carryForwardIncompleteTemps(targetDate){
+    const target=ensureDay(targetDate);
+    const existingIds=new Set(target.temp.map(task=>task.id));
+    let changed=false;
+    Object.keys(state.days).filter(date=>date<targetDate).sort().forEach(date=>{
+      const source=state.days[date];
+      if(!source||!Array.isArray(source.temp)) return;
+      const unfinished=source.temp.filter(task=>!task.done);
+      if(unfinished.length===0) return;
+      source.temp=source.temp.filter(task=>task.done);
+      unfinished.forEach(task=>{
+        if(existingIds.has(task.id)) return;
+        task.carriedFrom=task.carriedFrom||date;
+        task.carriedAt=Date.now();
+        target.temp.push(task);
+        existingIds.add(task.id);
+      });
+      changed=true;
+    });
+    if(changed) saveState();
   }
   function totalStreak(){
     return state.recurring.reduce((s,r)=>s+(r.total||0),0);
@@ -1467,6 +1498,7 @@
 
   function renderToday(){
     const today=todayStr();
+    carryForwardIncompleteTemps(today);
     els.todayLabel.textContent=new Date().getMonth()+1+"月"+new Date().getDate()+"日 · 周"+WEEKDAY[(new Date().getDay()+6)%7];
     els.streakTotal.textContent=totalStreak();
     els.pointsTotal.textContent=pointsBalance();
@@ -1485,20 +1517,21 @@
       els.listSchedule.innerHTML='<div class="empty-hint">暂无日程安排</div>';
     }
     scheds.forEach(s=>{
-      const conflict=hasConflict(s.date,s.start,s.end,s.id);
+      const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
+      const conflict=hasTime&&hasConflict(s.date,s.start,s.end,s.id);
       const isToday=s.date===today;
       const dateLabel=isToday?"":fmtShortDate(s.date)+" ";
       const card=document.createElement("div");
       card.className="item-card schedule"+(s.done?" is-done":"")+(conflict?" conflict":"");
       card.dataset.itemId=s.id;
-      card.title="双击编辑日程文字";
+      card.title="长按编辑日程文字";
       card.innerHTML=`
         <button class="check" data-act="toggle-schedule" data-id="${s.id}">${s.done?iconCheck():""}</button>
         <div class="item-body">
           <div class="item-name">${escapeHtml(s.name)}</div>
           <div class="item-meta">
-            <span class="meta-time">${dateLabel}${s.start}–${s.end}</span>
-            <span class="meta-chip meta-countdown" data-start="${s.startMs}" data-end="${s.endMs}">${countdownText(s.startMs,s.endMs)}</span>
+            <span class="meta-time">${dateLabel}${hasTime?s.start+"–"+s.end:"未设置时间"}</span>
+            ${hasTime?'<span class="meta-chip meta-countdown" data-start="'+s.startMs+'" data-end="'+s.endMs+'">'+countdownText(s.startMs,s.endMs)+'</span>':""}
             ${s.leadMinutes>0?'<span class="meta-chip">提前'+fmtMinutes(s.leadMinutes)+'提醒</span>':""}
             ${s.recurrenceMode==="daily"?'<span class="meta-chip">每日循环</span>':s.recurrenceMode==="weekly"?'<span class="meta-chip">每周循环</span>':""}
             ${conflict?'<span class="meta-conflict">⚠ 时间冲突</span>':""}
@@ -1539,7 +1572,7 @@
     enableDragReorder(els.listRecurring,"recurring");
 
     // temp
-    const tempItems=applySort(day.temp,state.sortMode.temp);
+    const tempItems=applySort(day.temp,state.sortMode.temp).sort((a,b)=>Number(a.done)-Number(b.done));
     els.cntTemp.textContent=day.temp.length? day.temp.length+"项":"";
     els.listTemp.innerHTML="";
     if(day.temp.length===0){
@@ -1549,12 +1582,12 @@
       const card=document.createElement("div");
       card.className="item-card temp"+(t.done?" is-done":"");
       card.dataset.itemId=t.id;
-      card.title="双击编辑临时任务文字";
+      card.title="长按编辑临时任务文字";
       card.innerHTML=`
         <button class="check" data-act="toggle-temp" data-id="${t.id}">${t.done?iconCheck():""}</button>
         <div class="item-body">
           <div class="item-name">${escapeHtml(t.name)}</div>
-          <div class="item-meta">${priorityStarsHtml(t.priority)}</div>
+          <div class="item-meta">${t.carriedFrom?'<span class="meta-chip">从 '+fmtShortDate(t.carriedFrom)+' 结转</span>':""}${priorityStarsHtml(t.priority)}</div>
         </div>
         <button class="duration-tag ${t.done&&t.minutes?"filled":""}" data-act="edit-minutes" data-kind="temp" data-id="${t.id}" ${t.done?"":'disabled style="opacity:.35;cursor:default"'}>${t.done? setDurationLabel(t.minutes):"用时"}</button>
         <button class="item-del" data-act="del-temp" data-id="${t.id}">${iconTrash()}</button>
@@ -1678,7 +1711,8 @@
       const day=state.days[dateStr];
       if(!day.schedule) return;
       day.schedule.forEach(s=>{
-        list.push(Object.assign({},s,{date:dateStr,startMs:dateTimeMs(dateStr,s.start),endMs:dateTimeMs(dateStr,s.end)}));
+        const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
+        list.push(Object.assign({},s,{date:dateStr,hasTime,startMs:dateTimeMs(dateStr,hasTime?s.start:"00:00"),endMs:dateTimeMs(dateStr,hasTime?s.end:"23:59")}));
       });
     });
     return list;
@@ -1807,7 +1841,7 @@
   els.listTemp.addEventListener("click",onListClick);
   els.listSchedule.addEventListener("click",onListClick);
 
-  /* ---------------- double-click text editing ---------------- */
+  /* ---------------- long-press text editing ---------------- */
   const editItemBackdrop=document.getElementById("edit-item-backdrop");
   const editItemName=document.getElementById("edit-item-name");
   let editingItemKind=null;
@@ -1838,31 +1872,41 @@
     if(!card) return null;
     return {kind:card.classList.contains("schedule")?"schedule":"temp",id:card.dataset.itemId};
   }
-  function onEditableTaskDoubleClick(e){
+  let itemHoldState=null;
+  function clearItemHold(){
+    if(itemHoldState&&itemHoldState.timer) clearTimeout(itemHoldState.timer);
+    itemHoldState=null;
+    window.removeEventListener("pointermove",onItemHoldMove);
+    window.removeEventListener("pointerup",clearItemHold);
+    window.removeEventListener("pointercancel",clearItemHold);
+  }
+  function onItemHoldMove(e){
+    if(!itemHoldState) return;
+    if(Math.abs(e.clientX-itemHoldState.x)>10||Math.abs(e.clientY-itemHoldState.y)>10) clearItemHold();
+  }
+  function onItemHoldStart(e){
+    if(e.pointerType==="mouse"&&e.button!==0) return;
     const target=editableCardFromEvent(e);
     if(!target) return;
-    e.preventDefault();
-    openItemTextEditor(target.kind,target.id);
+    clearItemHold();
+    itemHoldState={target,x:e.clientX,y:e.clientY,timer:null};
+    itemHoldState.timer=setTimeout(()=>{
+      const held=itemHoldState&&itemHoldState.target;
+      if(!held) return;
+      if(navigator.vibrate) navigator.vibrate(18);
+      clearItemHold();
+      openItemTextEditor(held.kind,held.id);
+    },560);
+    window.addEventListener("pointermove",onItemHoldMove,{passive:true});
+    window.addEventListener("pointerup",clearItemHold,{once:true});
+    window.addEventListener("pointercancel",clearItemHold,{once:true});
   }
-  els.listTemp.addEventListener("dblclick",onEditableTaskDoubleClick);
-  els.listSchedule.addEventListener("dblclick",onEditableTaskDoubleClick);
-  let lastTaskTap={key:"",time:0};
-  function onEditableTaskTouch(e){
-    if(e.pointerType!=="touch") return;
-    const target=editableCardFromEvent(e);
-    if(!target) return;
-    const now=Date.now();
-    const key=target.kind+":"+target.id;
-    if(lastTaskTap.key===key&&now-lastTaskTap.time<360){
-      e.preventDefault();
-      lastTaskTap={key:"",time:0};
-      openItemTextEditor(target.kind,target.id);
-    }else{
-      lastTaskTap={key,time:now};
-    }
-  }
-  els.listTemp.addEventListener("pointerup",onEditableTaskTouch);
-  els.listSchedule.addEventListener("pointerup",onEditableTaskTouch);
+  [els.listTemp,els.listSchedule].forEach(list=>{
+    list.addEventListener("pointerdown",onItemHoldStart);
+    list.addEventListener("contextmenu",(e)=>{
+      if(editableCardFromEvent(e)) e.preventDefault();
+    });
+  });
   document.getElementById("edit-item-save").addEventListener("click",()=>{
     const name=editItemName.value.trim();
     if(!name){ toast("请填写名称"); editItemName.focus(); return; }
@@ -2016,8 +2060,9 @@
 
     const entries=[];
     day.schedule.forEach(s=>{
-      const dur=minutesOfHM(s.end)-minutesOfHM(s.start);
-      entries.push({t:minutesOfHM(s.start), name:s.name, sub:s.start+"–"+s.end+(s.done?" · 已完成":""), color:"var(--teal)", minutes: dur>0?dur:0});
+      const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
+      const dur=hasTime?minutesOfHM(s.end)-minutesOfHM(s.start):0;
+      entries.push({t:hasTime?minutesOfHM(s.start):0, timeLabel:hasTime?"":"—", name:s.name, sub:(hasTime?s.start+"–"+s.end:"未设置时间")+(s.done?" · 已完成":""), color:"var(--teal)", minutes: dur>0?dur:0});
     });
     day.recurringDone.forEach(r=>{
       const tpl=state.recurring.find(x=>x.id===r.templateId);
@@ -2038,8 +2083,8 @@
       html+='<div class="empty-hint">这天还没有任务记录</div>';
     }else{
       html+='<ul class="timeline">'+entries.map(e=>{
-        const hh=pad2(Math.floor(e.t/60)), mm=pad2(e.t%60);
-        return `<li><span class="tl-time">${hh}:${mm}</span><span class="tl-dot" style="background:${e.color}"></span>
+        const hh=pad2(Math.floor(e.t/60)), mm=pad2(e.t%60), timeLabel=e.timeLabel||hh+":"+mm;
+        return `<li><span class="tl-time">${timeLabel}</span><span class="tl-dot" style="background:${e.color}"></span>
           <div class="tl-body"><div class="tl-name">${escapeHtml(e.name)}</div><div class="tl-sub">${escapeHtml(e.sub)}</div></div></li>`;
       }).join("")+'</ul>';
     }
@@ -2077,11 +2122,28 @@
   const fEnd=document.getElementById("f-end");
   const fStartBtn=document.getElementById("f-start-btn");
   const fEndBtn=document.getElementById("f-end-btn");
+  const fTimeEnable=document.getElementById("f-time-enable");
+  const scheduleTimeFields=document.getElementById("schedule-time-fields");
+  const scheduleReminderField=document.getElementById("schedule-reminder-field");
   const fLeadEnable=document.getElementById("f-lead-enable");
   const fLeadAmount=document.getElementById("f-lead-amount");
   const fLeadUnit=document.getElementById("f-lead-unit");
   const leadAmountRow=document.getElementById("lead-amount-row");
   const conflictHint=document.getElementById("conflict-hint");
+  function syncScheduleTimeVisibility(){
+    const show=fTimeEnable.checked;
+    scheduleTimeFields.hidden=!show;
+    scheduleReminderField.hidden=!show;
+    fTimeEnable.setAttribute("aria-expanded",show?"true":"false");
+    if(!show){
+      fLeadEnable.checked=false;
+      syncLeadReminderVisibility();
+    }
+  }
+  fTimeEnable.addEventListener("change",()=>{
+    syncScheduleTimeVisibility();
+    checkConflictPreview();
+  });
   function syncLeadReminderVisibility(){
     const shouldShow=fLeadEnable.checked;
     leadAmountRow.hidden=!shouldShow;
@@ -2153,6 +2215,7 @@
     resetRepeatSettings();
     fStartBtn.textContent="选择时间"; fStartBtn.classList.remove("chosen");
     fEndBtn.textContent="选择时间"; fEndBtn.classList.remove("chosen");
+    fTimeEnable.checked=false; syncScheduleTimeVisibility();
     fLeadEnable.checked=false; fLeadAmount.value="15"; fLeadUnit.value="1"; syncLeadReminderVisibility();
     conflictHint.hidden=true;
     selectedPriority=3; renderPriorityPicker();
@@ -2277,16 +2340,26 @@
   }));
   function checkConflictPreview(){
     if(addType!=="schedule") return;
-    if(!fDate.value||!fStart.value||!fEnd.value){ conflictHint.hidden=true; return; }
-    if(minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){
-      conflictHint.hidden=false;
-      conflictHint.textContent="结束时间要晚于开始时间哦";
-      return;
-    }
+    if(!fDate.value){ conflictHint.hidden=true; return; }
     const plan=buildScheduleOccurrencePlan();
     if(plan.error){
       conflictHint.hidden=false;
       conflictHint.textContent=plan.error;
+      return;
+    }
+    if(!fTimeEnable.checked){
+      if(repeatMode!=="none"){
+        conflictHint.hidden=false;
+        conflictHint.textContent="将创建 "+plan.dates.length+" 次无具体时间的循环日程";
+      }else{
+        conflictHint.hidden=true;
+      }
+      return;
+    }
+    if(!fStart.value||!fEnd.value){ conflictHint.hidden=true; return; }
+    if(minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){
+      conflictHint.hidden=false;
+      conflictHint.textContent="结束时间要晚于开始时间哦";
       return;
     }
     const conflictDays=plan.dates.map(date=>({date,items:conflictList(date,fStart.value,fEnd.value,null)})).filter(entry=>entry.items.length>0);
@@ -2469,12 +2542,13 @@
       closeBackdrop("add-backdrop");
       toast("已添加今日临时任务");
     }else{
-      if(!fDate.value||!fStart.value||!fEnd.value){ toast("请填写完整的日期和时间"); return; }
-      if(minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){ toast("结束时间要晚于开始时间"); return; }
+      if(!fDate.value){ toast("请选择日期"); return; }
+      if(fTimeEnable.checked&&(!fStart.value||!fEnd.value)){ toast("请选择完整的开始和结束时间"); return; }
+      if(fTimeEnable.checked&&minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){ toast("结束时间要晚于开始时间"); return; }
       const plan=buildScheduleOccurrencePlan();
       if(plan.error){ toast(plan.error); return; }
       let leadMinutes=0;
-      if(fLeadEnable.checked){
+      if(fTimeEnable.checked&&fLeadEnable.checked){
         const amt=parseInt(fLeadAmount.value,10);
         const unit=parseInt(fLeadUnit.value,10);
         if(amt>0) leadMinutes=amt*unit;
@@ -2483,7 +2557,7 @@
       const recurrenceWeekdays=[...selectedRepeatWeekdays].sort((a,b)=>a-b);
       plan.dates.forEach((date,index)=>{
         ensureDay(date).schedule.push({
-          id:uid(), name, date, start:fStart.value, end:fEnd.value,
+          id:uid(), name, date, start:fTimeEnable.checked?fStart.value:"", end:fTimeEnable.checked?fEnd.value:"", hasTime:fTimeEnable.checked,
           leadMinutes, done:false,
           notifiedLead:false, notifiedOnTime:false,
           createdAt:now, order:now+index, priority:selectedPriority,
@@ -2756,6 +2830,7 @@
       const day=state.days[dateStr];
       if(!day.schedule) return;
       day.schedule.forEach(s=>{
+        if(s.hasTime===false||!s.start||!s.end) return;
         const parts=dateStr.split("-").map(Number);
         const [sh,sm]=s.start.split(":").map(Number);
         const startTime=new Date(parts[0],parts[1]-1,parts[2],sh,sm,0).getTime();
