@@ -93,14 +93,17 @@
   }
 
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  }
   body{
     background:var(--bg);
     color:var(--ink);
     font-family:'Nunito',-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
     -webkit-font-smoothing:antialiased;
-    height:100vh;
-    height:100dvh;
+    position:fixed;inset:0;
+    height:100%;
     min-height:0;
     overflow:hidden;
     display:flex;
@@ -109,8 +112,7 @@
   .app-shell{
     width:100%;
     max-width:460px;
-    height:100vh;
-    height:100dvh;
+    height:100%;
     min-height:0;
     background:var(--bg);
     display:flex;
@@ -118,6 +120,7 @@
     position:relative;
     overflow:hidden;
     box-shadow:var(--shadow);
+    touch-action:manipulation;
   }
   @media (min-width:520px){
     body{padding:28px 12px;}
@@ -130,7 +133,7 @@
 
   /* ---------- top bar ---------- */
   .app-header{
-    flex:none;position:relative;z-index:30;background:var(--bg);
+    flex:0 0 auto;position:relative;z-index:30;background:var(--bg);
   }
   .topbar{
     display:flex;align-items:center;justify-content:space-between;
@@ -149,6 +152,7 @@
     cursor:pointer;box-shadow:var(--shadow-sm);flex:none;
   }
   .icon-btn:hover{color:var(--accent);}
+  .icon-btn.is-on{color:var(--accent);background:var(--accent-tint);box-shadow:inset 0 0 0 1px var(--accent),var(--shadow-sm);}
   .theme-icon{width:17px;height:17px;}
   .theme-icon-sun{display:none;}
   :root[data-theme="dark"] .theme-icon-moon{display:none;}
@@ -176,7 +180,7 @@
 
   .view{
     padding:2px 22px 116px;flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
-    overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:manipulation;
   }
   .view[hidden]{display:none!important;}
 
@@ -405,6 +409,12 @@
     text-align:left;cursor:pointer;font-variant-numeric:tabular-nums;
   }
   .time-picker-btn.chosen{border-color:var(--accent);color:var(--accent);background:var(--accent-tint);}
+  .date-picker-btn{
+    width:100%;border:1.6px solid var(--line);background:var(--surface);border-radius:12px;
+    padding:11px 13px;font-size:15px;font-family:inherit;color:var(--ink);font-weight:700;
+    text-align:left;cursor:pointer;font-variant-numeric:tabular-nums;
+  }
+  .date-picker-btn.chosen{border-color:var(--accent);color:var(--accent);background:var(--accent-tint);}
   .field-row{display:flex;gap:10px;}
   .field-row .field{flex:1;}
 
@@ -440,6 +450,26 @@
   .wheel-item.selected{color:var(--accent);font-size:19px;}
   .time-wheel-actions{display:flex;gap:10px;}
   .time-wheel-actions .btn{margin-top:0;}
+
+  /* ---------- date picker ---------- */
+  .date-picker-modal{
+    width:100%;max-width:380px;background:var(--surface);border-radius:24px;padding:20px;
+    box-shadow:var(--shadow);
+  }
+  .date-picker-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .date-picker-month{font-family:'Fraunces',serif;font-weight:600;font-size:20px;}
+  .date-picker-weekdays,.date-picker-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .date-picker-weekdays{margin-bottom:7px;}
+  .date-picker-weekdays span{text-align:center;color:var(--ink-3);font-size:11.5px;font-weight:800;}
+  .date-day{
+    aspect-ratio:1;border:none;border-radius:12px;background:var(--surface-soft);color:var(--ink);
+    font-family:inherit;font-size:13px;font-weight:800;cursor:pointer;
+  }
+  .date-day.pad{visibility:hidden;pointer-events:none;}
+  .date-day.today{box-shadow:inset 0 0 0 1.5px var(--accent);}
+  .date-day.selected{background:var(--accent);color:var(--accent-ink);box-shadow:none;}
+  .date-picker-actions{display:flex;gap:10px;margin-top:18px;}
+  .date-picker-actions .btn{margin-top:0;}
   .lead-toggle-label{
     display:flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:var(--ink);
     cursor:pointer;margin-bottom:0;
@@ -483,8 +513,30 @@
   /* manage recurring modal */
   .manage-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);}
   .manage-row:last-child{border-bottom:none;}
-  .manage-row .m-name{flex:1;font-weight:800;font-size:14.5px;}
+  .manage-row .m-main{flex:1;min-width:0;}
+  .manage-row .m-name{font-weight:800;font-size:14.5px;overflow-wrap:anywhere;}
+  .manage-row .priority-stars{margin-top:4px;}
   .manage-row .m-count{font-size:12px;color:var(--ink-3);font-weight:700;font-variant-numeric:tabular-nums;}
+  .manage-actions{display:flex;align-items:center;gap:4px;}
+  .item-edit{
+    flex:none;border:none;background:transparent;color:var(--ink-3);cursor:pointer;padding:5px;display:flex;
+  }
+  .item-edit:hover{color:var(--accent);}
+
+  /* ---------- custom delete confirmation ---------- */
+  .confirm-modal{
+    width:100%;max-width:340px;background:var(--surface);border-radius:24px;padding:25px 22px 21px;
+    text-align:center;box-shadow:var(--shadow);
+  }
+  .confirm-icon{
+    width:54px;height:54px;border-radius:50%;margin:0 auto 14px;background:var(--accent-tint);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .confirm-modal h3{font-family:'Fraunces',serif;font-weight:600;font-size:20px;margin:0 0 7px;}
+  .confirm-modal p{color:var(--ink-2);font-weight:700;font-size:13.5px;line-height:1.55;margin:0 0 18px;}
+  .confirm-actions{display:flex;gap:10px;}
+  .confirm-actions .btn{margin-top:0;}
+  .btn-confirm-delete{background:var(--accent);color:var(--accent-ink);}
 
   /* ---------- garden / pets ---------- */
   .garden-head{display:flex;align-items:flex-end;justify-content:space-between;margin:6px 2px 16px;}
@@ -734,7 +786,8 @@
     <div id="schedule-fields" hidden>
       <div class="field">
         <label>日期</label>
-        <input type="date" id="f-date">
+        <button type="button" class="date-picker-btn" id="f-date-btn">选择日期</button>
+        <input type="hidden" id="f-date">
       </div>
       <div class="field-row">
         <div class="field">
@@ -774,6 +827,27 @@
   </div>
 </div>
 
+<!-- date picker -->
+<div class="backdrop center" id="date-picker-backdrop">
+  <div class="date-picker-modal" role="dialog" aria-modal="true" aria-labelledby="date-picker-title">
+    <div class="date-picker-head">
+      <button class="icon-btn" id="date-picker-prev" type="button" aria-label="上个月">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="date-picker-month" id="date-picker-title"></div>
+      <button class="icon-btn" id="date-picker-next" type="button" aria-label="下个月">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </div>
+    <div class="date-picker-weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>
+    <div class="date-picker-grid" id="date-picker-grid"></div>
+    <div class="date-picker-actions">
+      <button class="btn btn-ghost" id="date-picker-today" type="button">今天</button>
+      <button class="btn btn-primary" id="date-picker-confirm" type="button">确定</button>
+    </div>
+  </div>
+</div>
+
 <!-- time wheel picker -->
 <div class="backdrop" id="time-wheel-backdrop">
   <div class="time-wheel-sheet">
@@ -801,6 +875,24 @@
   </div>
 </div>
 
+<!-- Edit recurring task sheet -->
+<div class="backdrop" id="edit-recurring-backdrop">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">编辑重复任务</h3>
+    <div class="field">
+      <label for="edit-recurring-name">任务名称</label>
+      <input type="text" id="edit-recurring-name" maxlength="40">
+    </div>
+    <div class="field">
+      <label>优先级</label>
+      <div class="star-picker" id="edit-priority-picker"></div>
+    </div>
+    <button class="btn btn-primary" id="edit-recurring-save" type="button">保存修改</button>
+    <button class="btn btn-ghost" id="edit-recurring-cancel" type="button">取消</button>
+  </div>
+</div>
+
 <!-- adopt pet sheet -->
 <div class="backdrop" id="adopt-backdrop">
   <div class="sheet">
@@ -819,6 +911,21 @@
     <div class="feed-pet-preview" id="feed-pet-preview"></div>
     <div class="food-grid" id="food-grid"></div>
     <button class="btn btn-ghost" id="feed-close-btn">关闭</button>
+  </div>
+</div>
+
+<!-- custom delete confirmation -->
+<div class="backdrop center" id="confirm-backdrop">
+  <div class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <div class="confirm-icon">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+    </div>
+    <h3 id="confirm-title">确认删除？</h3>
+    <p id="confirm-body"></p>
+    <div class="confirm-actions">
+      <button class="btn btn-ghost" id="confirm-cancel" type="button">取消</button>
+      <button class="btn btn-confirm-delete" id="confirm-delete" type="button">删除</button>
+    </div>
   </div>
 </div>
 
@@ -870,6 +977,11 @@
   updateThemeButton();
   themeBtn.addEventListener("click",()=>setTheme(activeTheme()==="dark"?"light":"dark"));
 
+  // Keep mobile double-taps from zooming the app while preserving pinch-to-zoom accessibility.
+  document.addEventListener("dblclick",(e)=>{
+    if(!e.target.closest("input,textarea,[contenteditable='true']")) e.preventDefault();
+  },{passive:false});
+
   /* ---------------- utils ---------------- */
   function pad2(n){return n<10?"0"+n:""+n;}
   function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
@@ -890,7 +1002,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], notificationsEnabled:false, sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -907,6 +1019,7 @@
       if(!parsed.days) parsed.days={};
       if(typeof parsed.pointsSpent!=="number") parsed.pointsSpent=0;
       if(!parsed.pets) parsed.pets=[];
+      if(typeof parsed.notificationsEnabled!=="boolean") parsed.notificationsEnabled=false;
       if(!parsed.sortMode) parsed.sortMode={};
       if(!parsed.sortMode.recurring) parsed.sortMode.recurring="custom";
       if(!parsed.sortMode.temp) parsed.sortMode.temp="custom";
@@ -1112,6 +1225,9 @@
   }
   function iconTrash(){
     return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>';
+  }
+  function iconEdit(){
+    return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"/></svg>';
   }
 
   function setDurationLabel(mins){
@@ -1484,8 +1600,8 @@
     if(act==="toggle-recurring") toggleRecurring(id);
     else if(act==="toggle-temp") toggleTemp(id);
     else if(act==="toggle-schedule") toggleSchedule(id);
-    else if(act==="del-temp"){ if(confirm("删除这个临时任务？")) deleteTemp(id); }
-    else if(act==="del-schedule"){ if(confirm("删除这个日程？")) deleteSchedule(id); }
+    else if(act==="del-temp") askDelete("确认删除临时任务？","删除后将无法恢复。",()=>deleteTemp(id));
+    else if(act==="del-schedule") askDelete("确认删除日程？","日程和对应提醒会一并删除。",()=>deleteSchedule(id));
     else if(act==="edit-minutes"){ if(!btn.disabled) openMinutesPopover(btn, btn.dataset.kind, id); }
   }
   els.listRecurring.addEventListener("click",onListClick);
@@ -1658,6 +1774,7 @@
   const nameLabel=document.getElementById("name-label");
   const fName=document.getElementById("f-name");
   const fDate=document.getElementById("f-date");
+  const fDateBtn=document.getElementById("f-date-btn");
   const fStart=document.getElementById("f-start");
   const fEnd=document.getElementById("f-end");
   const fStartBtn=document.getElementById("f-start-btn");
@@ -1696,11 +1813,43 @@
   function openBackdrop(id){ document.getElementById(id).classList.add("show"); }
   function closeBackdrop(id){ document.getElementById(id).classList.remove("show"); }
 
+  let pendingDeleteAction=null;
+  function closeDeleteConfirm(){
+    pendingDeleteAction=null;
+    closeBackdrop("confirm-backdrop");
+  }
+  function askDelete(title,message,onConfirm){
+    document.getElementById("confirm-title").textContent=title;
+    document.getElementById("confirm-body").textContent=message;
+    pendingDeleteAction=onConfirm;
+    openBackdrop("confirm-backdrop");
+  }
+  document.getElementById("confirm-cancel").addEventListener("click",closeDeleteConfirm);
+  document.getElementById("confirm-backdrop").addEventListener("click",(e)=>{
+    if(e.target.id==="confirm-backdrop") closeDeleteConfirm();
+  });
+  document.getElementById("confirm-delete").addEventListener("click",()=>{
+    const action=pendingDeleteAction;
+    closeDeleteConfirm();
+    if(action) action();
+  });
+
+  function updateDateButton(){
+    if(!fDate.value){
+      fDateBtn.textContent="选择日期";
+      fDateBtn.classList.remove("chosen");
+      return;
+    }
+    const [y,m,d]=fDate.value.split("-").map(Number);
+    fDateBtn.textContent=y+"年"+m+"月"+d+"日";
+    fDateBtn.classList.add("chosen");
+  }
+
   document.getElementById("fab-add").addEventListener("click",()=>{
     addType="recurring";
     document.querySelectorAll(".type-opt").forEach(o=>o.classList.toggle("active",o.dataset.type==="recurring"));
     updateAddFormMode();
-    fName.value=""; fDate.value=todayStr(); fStart.value=""; fEnd.value="";
+    fName.value=""; fDate.value=todayStr(); updateDateButton(); fStart.value=""; fEnd.value="";
     fStartBtn.textContent="选择时间"; fStartBtn.classList.remove("chosen");
     fEndBtn.textContent="选择时间"; fEndBtn.classList.remove("chosen");
     fLeadEnable.checked=false; fLeadAmount.value="15"; fLeadUnit.value="1"; syncLeadReminderVisibility();
@@ -1752,6 +1901,76 @@
       conflictHint.hidden=true;
     }
   }
+
+  /* ---------------- custom date picker ---------------- */
+  const datePickerBackdrop=document.getElementById("date-picker-backdrop");
+  const datePickerGrid=document.getElementById("date-picker-grid");
+  const datePickerTitle=document.getElementById("date-picker-title");
+  let datePickerCursor=new Date();
+  let datePickerSelected=new Date();
+
+  function dateFromStr(value){
+    const parts=(value||todayStr()).split("-").map(Number);
+    return new Date(parts[0],parts[1]-1,parts[2]);
+  }
+  function sameCalendarDay(a,b){
+    return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate();
+  }
+  function renderDatePicker(){
+    const year=datePickerCursor.getFullYear();
+    const month=datePickerCursor.getMonth();
+    datePickerTitle.textContent=year+"年 "+(month+1)+"月";
+    const first=new Date(year,month,1);
+    const leading=(first.getDay()+6)%7;
+    const days=new Date(year,month+1,0).getDate();
+    const today=dateFromStr(todayStr());
+    let html="";
+    for(let i=0;i<leading;i++) html+='<button class="date-day pad" tabindex="-1"></button>';
+    for(let day=1;day<=days;day++){
+      const value=dateStrOf(new Date(year,month,day));
+      const current=new Date(year,month,day);
+      const classes=["date-day"];
+      if(sameCalendarDay(current,today)) classes.push("today");
+      if(sameCalendarDay(current,datePickerSelected)) classes.push("selected");
+      html+='<button type="button" class="'+classes.join(" ")+'" data-date="'+value+'">'+day+'</button>';
+    }
+    datePickerGrid.innerHTML=html;
+  }
+  function openDatePicker(){
+    datePickerSelected=dateFromStr(fDate.value||todayStr());
+    datePickerCursor=new Date(datePickerSelected.getFullYear(),datePickerSelected.getMonth(),1);
+    renderDatePicker();
+    openBackdrop("date-picker-backdrop");
+  }
+  fDateBtn.addEventListener("click",openDatePicker);
+  datePickerGrid.addEventListener("click",(e)=>{
+    const day=e.target.closest(".date-day[data-date]");
+    if(!day) return;
+    datePickerSelected=dateFromStr(day.dataset.date);
+    renderDatePicker();
+  });
+  document.getElementById("date-picker-prev").addEventListener("click",()=>{
+    datePickerCursor=new Date(datePickerCursor.getFullYear(),datePickerCursor.getMonth()-1,1);
+    renderDatePicker();
+  });
+  document.getElementById("date-picker-next").addEventListener("click",()=>{
+    datePickerCursor=new Date(datePickerCursor.getFullYear(),datePickerCursor.getMonth()+1,1);
+    renderDatePicker();
+  });
+  document.getElementById("date-picker-today").addEventListener("click",()=>{
+    datePickerSelected=dateFromStr(todayStr());
+    datePickerCursor=new Date(datePickerSelected.getFullYear(),datePickerSelected.getMonth(),1);
+    renderDatePicker();
+  });
+  document.getElementById("date-picker-confirm").addEventListener("click",()=>{
+    fDate.value=dateStrOf(datePickerSelected);
+    updateDateButton();
+    fDate.dispatchEvent(new Event("input"));
+    closeBackdrop("date-picker-backdrop");
+  });
+  datePickerBackdrop.addEventListener("click",(e)=>{
+    if(e.target===datePickerBackdrop) closeBackdrop("date-picker-backdrop");
+  });
 
   /* ---------------- time wheel picker ---------------- */
   const WHEEL_ITEM_H=40;
@@ -1880,17 +2099,75 @@
     }
     list.innerHTML=state.recurring.map(r=>`
       <div class="manage-row">
-        <span class="m-name">${escapeHtml(r.name)}</span>
+        <div class="m-main">
+          <div class="m-name">${escapeHtml(r.name)}</div>
+          ${priorityStarsHtml(r.priority)}
+        </div>
         <span class="m-count">累计 ${r.total||0} 次</span>
-        <button class="item-del" data-id="${r.id}">${iconTrash()}</button>
+        <div class="manage-actions">
+          <button class="item-edit" data-edit-id="${r.id}" aria-label="编辑${escapeHtml(r.name)}">${iconEdit()}</button>
+          <button class="item-del" data-delete-id="${r.id}" aria-label="删除${escapeHtml(r.name)}">${iconTrash()}</button>
+        </div>
       </div>
     `).join("");
-    list.querySelectorAll(".item-del").forEach(btn=>{
+    list.querySelectorAll("[data-edit-id]").forEach(btn=>{
+      btn.addEventListener("click",()=>openRecurringEditor(btn.dataset.editId));
+    });
+    list.querySelectorAll("[data-delete-id]").forEach(btn=>{
       btn.addEventListener("click",()=>{
-        if(confirm("删除这个重复任务？累计次数也会一并删除。")) deleteRecurring(btn.dataset.id);
+        askDelete("确认删除重复任务？","任务的累计完成次数也会一并删除。",()=>deleteRecurring(btn.dataset.deleteId));
       });
     });
   }
+
+  const editRecurringBackdrop=document.getElementById("edit-recurring-backdrop");
+  const editRecurringName=document.getElementById("edit-recurring-name");
+  const editPriorityPicker=document.getElementById("edit-priority-picker");
+  editPriorityPicker.innerHTML=priorityPicker.innerHTML;
+  let editingRecurringId=null;
+  let editingRecurringPriority=3;
+  function renderEditPriority(){
+    editPriorityPicker.querySelectorAll("button").forEach(btn=>{
+      btn.classList.toggle("filled",Number(btn.dataset.star)<=editingRecurringPriority);
+    });
+  }
+  function openRecurringEditor(id){
+    const task=state.recurring.find(r=>r.id===id);
+    if(!task) return;
+    editingRecurringId=id;
+    editRecurringName.value=task.name;
+    editingRecurringPriority=task.priority||3;
+    renderEditPriority();
+    openBackdrop("edit-recurring-backdrop");
+    setTimeout(()=>editRecurringName.focus(),180);
+  }
+  function closeRecurringEditor(){
+    editingRecurringId=null;
+    closeBackdrop("edit-recurring-backdrop");
+  }
+  editPriorityPicker.addEventListener("click",(e)=>{
+    const btn=e.target.closest("button");
+    if(!btn) return;
+    editingRecurringPriority=Number(btn.dataset.star);
+    renderEditPriority();
+  });
+  document.getElementById("edit-recurring-save").addEventListener("click",()=>{
+    const task=state.recurring.find(r=>r.id===editingRecurringId);
+    const name=editRecurringName.value.trim();
+    if(!task) return closeRecurringEditor();
+    if(!name){ toast("请填写任务名称"); editRecurringName.focus(); return; }
+    task.name=name;
+    task.priority=editingRecurringPriority;
+    saveState();
+    renderToday();
+    renderManageList();
+    closeRecurringEditor();
+    toast("重复任务已更新");
+  });
+  document.getElementById("edit-recurring-cancel").addEventListener("click",closeRecurringEditor);
+  editRecurringBackdrop.addEventListener("click",(e)=>{
+    if(e.target===editRecurringBackdrop) closeRecurringEditor();
+  });
 
   /* ---------------- garden / pet shop ---------------- */
   document.getElementById("points-badge-btn").addEventListener("click",()=>{
@@ -2008,18 +2285,40 @@
   feedBackdrop.addEventListener("click",(e)=>{ if(e.target===feedBackdrop) closeBackdrop("feed-backdrop"); });
 
   /* ---------------- reminders ---------------- */
+  const bellBtn=document.getElementById("bell-btn");
+  function updateBellButton(){
+    const enabled=state.notificationsEnabled===true;
+    bellBtn.classList.toggle("is-on",enabled);
+    bellBtn.setAttribute("aria-pressed",enabled?"true":"false");
+    bellBtn.setAttribute("aria-label",enabled?"关闭日程通知":"开启日程通知");
+    bellBtn.title=enabled?"关闭日程通知":"开启日程通知";
+  }
   function maybeAskNotificationPermission(){
-    if("Notification" in window && Notification.permission==="default"){
+    if(state.notificationsEnabled && "Notification" in window && Notification.permission==="default"){
       Notification.requestPermission();
     }
   }
-  document.getElementById("bell-btn").addEventListener("click",()=>{
-    if(!("Notification" in window)){ toast("当前浏览器不支持系统通知，页面内提醒仍会正常弹出"); return; }
-    if(Notification.permission==="granted"){ toast("通知已开启"); return; }
-    Notification.requestPermission().then(p=>{
-      toast(p==="granted"?"通知已开启":"未开启系统通知，页面内提醒仍会弹出");
-    });
+  bellBtn.addEventListener("click",async()=>{
+    if(state.notificationsEnabled){
+      state.notificationsEnabled=false;
+      saveState();
+      updateBellButton();
+      toast("日程通知已关闭");
+      return;
+    }
+    state.notificationsEnabled=true;
+    saveState();
+    updateBellButton();
+    if(!("Notification" in window)){
+      toast("页面内提醒已开启");
+      return;
+    }
+    if(Notification.permission==="default"){
+      try{ await Notification.requestPermission(); }catch(e){ /* keep in-page reminders enabled */ }
+    }
+    toast(Notification.permission==="granted"?"日程通知已开启":"页面内提醒已开启");
   });
+  updateBellButton();
 
   function fireReminder(schedule,isLead){
     const title = isLead ? "⏰ 即将开始："+schedule.name : "🔔 现在开始："+schedule.name;
@@ -2035,6 +2334,7 @@
   document.getElementById("alert-ok-btn").addEventListener("click",()=>closeBackdrop("alert-backdrop"));
 
   function checkReminders(){
+    if(!state.notificationsEnabled) return;
     const now=new Date();
     let dirty=false;
     Object.keys(state.days).forEach(dateStr=>{
