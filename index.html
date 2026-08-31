@@ -350,6 +350,7 @@
   .cal-cell.today{box-shadow:inset 0 0 0 2px var(--accent);}
   .cal-cell .dots{display:flex;gap:2px;height:5px;}
   .cal-cell .dots i{width:5px;height:5px;border-radius:50%;background:var(--teal);display:block;}
+  .cal-cell .dots i.journal-dot{background:var(--gold);}
   .cal-legend{display:flex;align-items:center;gap:14px;margin-top:16px;font-size:12px;color:var(--ink-2);font-weight:700;flex-wrap:wrap;}
   .cal-legend .sw{display:inline-flex;align-items:center;gap:6px;}
   .cal-legend .dot{width:9px;height:9px;border-radius:50%;}
@@ -371,6 +372,48 @@
   .tl-body{flex:1;background:var(--surface-soft);border-radius:12px;padding:9px 12px;min-width:0;}
   .tl-name{font-weight:800;font-size:14px;}
   .tl-sub{font-size:12px;color:var(--ink-2);font-weight:700;margin-top:2px;}
+
+  /* ---------- daily journal ---------- */
+  .journal-section{padding-bottom:16px;}
+  .journal-intro{color:var(--ink-2);font-size:12.5px;font-weight:700;line-height:1.55;margin:-2px 2px 12px;}
+  .journal-completed{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 11px;}
+  .journal-completed:empty{display:none;}
+  .journal-task-chip{
+    background:var(--accent-tint);color:var(--accent);border-radius:999px;padding:5px 10px;
+    font-size:11.5px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .journal-textarea{
+    width:100%;min-height:122px;resize:vertical;border:1.6px solid var(--line);border-radius:16px;
+    background:var(--surface-soft);color:var(--ink);font-family:inherit;font-size:14px;font-weight:650;
+    line-height:1.7;padding:13px 14px;display:block;
+  }
+  .journal-textarea:focus{border-color:var(--accent);background:var(--surface);outline:none;}
+  .journal-actions{display:flex;gap:9px;margin-top:10px;}
+  .journal-actions .btn{margin-top:0;padding:12px 10px;font-size:14px;}
+  .journal-day-card{margin-top:14px;background:var(--surface-soft);border-radius:16px;padding:13px 14px;}
+  .journal-day-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;}
+  .journal-day-title{font-weight:900;font-size:13px;color:var(--accent);}
+  .journal-edit-link{
+    border:none;background:var(--accent-tint);color:var(--accent);border-radius:999px;padding:6px 10px;
+    font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;flex:none;
+  }
+  .journal-day-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13.5px;line-height:1.7;color:var(--ink);font-weight:650;}
+  .journal-day-empty{color:var(--ink-3);font-size:12.5px;font-weight:700;}
+  .journal-overview-sheet{max-height:92vh;max-height:92dvh;}
+  .journal-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+  .journal-overview-head .sheet-title{margin-bottom:3px;}
+  .journal-overview-sub{color:var(--ink-3);font-size:12px;font-weight:700;}
+  .journal-sort-btn{
+    border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;
+    padding:8px 11px;font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;
+  }
+  .journal-overview-list{display:flex;flex-direction:column;gap:12px;}
+  .journal-entry-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);}
+  .journal-entry-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+  .journal-entry-date{font-family:'Fraunces',serif;font-size:16px;font-weight:600;}
+  .journal-entry-tasks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .journal-entry-text{background:var(--surface-soft);border-radius:13px;padding:11px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7;font-weight:650;}
+  .journal-entry-empty{color:var(--ink-3);font-size:12.5px;font-weight:700;padding:4px 1px;}
 
   /* ---------- modal / sheet ---------- */
   .backdrop{
@@ -706,6 +749,7 @@
       <span class="sw"><span class="dot" style="background:var(--accent-tint);box-shadow:inset 0 0 0 1px var(--accent)"></span>较少</span>
       <span class="sw"><span class="dot" style="background:var(--accent)"></span>充实</span>
       <span class="sw"><span class="dot" style="background:var(--teal)"></span>有日程</span>
+      <span class="sw"><span class="dot" style="background:var(--gold)"></span>有日记</span>
     </div>
     <div class="day-summary-card" id="day-summary"></div>
   </div>
@@ -746,6 +790,22 @@
 
 <canvas id="confetti-canvas"></canvas>
 <div class="toast-wrap" id="toast-wrap"></div>
+
+<!-- journal overview -->
+<div class="backdrop" id="journal-overview-backdrop">
+  <div class="sheet journal-overview-sheet">
+    <div class="sheet-grip"></div>
+    <div class="journal-overview-head">
+      <div>
+        <h3 class="sheet-title">日记总览</h3>
+        <div class="journal-overview-sub">按日期回看完成事项与当天记录</div>
+      </div>
+      <button class="journal-sort-btn" id="journal-sort-btn" type="button">从旧到新</button>
+    </div>
+    <div class="journal-overview-list" id="journal-overview-list"></div>
+    <button class="btn btn-ghost" id="journal-overview-close" type="button">关闭</button>
+  </div>
+</div>
 
 <!-- Add task sheet -->
 <div class="backdrop" id="add-backdrop">
@@ -1026,8 +1086,12 @@
       if(!parsed.sortMode.schedule) parsed.sortMode.schedule="time";
       parsed.recurring.forEach(migrateItem);
       Object.values(parsed.days).forEach(day=>{
-        (day.temp||[]).forEach(migrateItem);
-        (day.schedule||[]).forEach(migrateItem);
+        if(!Array.isArray(day.temp)) day.temp=[];
+        if(!Array.isArray(day.schedule)) day.schedule=[];
+        if(!Array.isArray(day.recurringDone)) day.recurringDone=[];
+        if(typeof day.journal!=="string") day.journal="";
+        day.temp.forEach(migrateItem);
+        day.schedule.forEach(migrateItem);
       });
       return parsed;
     }catch(e){ return defaultState(); }
@@ -1036,7 +1100,8 @@
     try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){ /* ignore quota errors */ }
   }
   function ensureDay(dateStr){
-    if(!state.days[dateStr]) state.days[dateStr]={temp:[],schedule:[],recurringDone:[]};
+    if(!state.days[dateStr]) state.days[dateStr]={temp:[],schedule:[],recurringDone:[],journal:""};
+    if(typeof state.days[dateStr].journal!=="string") state.days[dateStr].journal="";
     return state.days[dateStr];
   }
   function totalStreak(){
@@ -1468,6 +1533,80 @@
     const [y,m,d]=dateStr.split("-").map(Number);
     return m+"月"+d+"日";
   }
+  function fmtFullDate(dateStr){
+    const [y,m,d]=dateStr.split("-").map(Number);
+    const obj=new Date(y,m-1,d);
+    return y+"年"+m+"月"+d+"日 · 周"+WEEKDAY[(obj.getDay()+6)%7];
+  }
+
+  function completedItemsForDate(dateStr){
+    const day=state.days[dateStr];
+    if(!day) return [];
+    const items=[];
+    (day.recurringDone||[]).forEach(done=>{
+      const task=state.recurring.find(r=>r.id===done.templateId);
+      items.push(task?task.name:"已删除的重复任务");
+    });
+    (day.temp||[]).filter(task=>task.done).forEach(task=>items.push(task.name));
+    (day.schedule||[]).filter(task=>task.done).forEach(task=>items.push(task.name));
+    return items;
+  }
+
+  function taskChipsHtml(items){
+    return items.map(name=>'<span class="journal-task-chip">✓ '+escapeHtml(name)+'</span>').join("");
+  }
+
+  const journalOverviewBackdrop=document.getElementById("journal-overview-backdrop");
+  const journalOverviewList=document.getElementById("journal-overview-list");
+  let journalSortAscending=true;
+  function journalDates(){
+    return Object.keys(state.days).filter(date=>{
+      const day=state.days[date];
+      return (day.journal&&day.journal.trim())||completedItemsForDate(date).length>0;
+    }).sort((a,b)=>journalSortAscending?a.localeCompare(b):b.localeCompare(a));
+  }
+  function renderJournalOverview(){
+    const dates=journalDates();
+    document.getElementById("journal-sort-btn").textContent=journalSortAscending?"从旧到新":"从新到旧";
+    if(dates.length===0){
+      journalOverviewList.innerHTML='<div class="empty-hint">还没有日记或完成记录，先去完成一件小事吧。</div>';
+      return;
+    }
+    journalOverviewList.innerHTML=dates.map(date=>{
+      const day=state.days[date];
+      const tasks=completedItemsForDate(date);
+      return '<article class="journal-entry-card">'+
+        '<div class="journal-entry-head"><div class="journal-entry-date">'+fmtFullDate(date)+'</div><button class="journal-edit-link" type="button" data-journal-date="'+date+'">编辑日记</button></div>'+
+        (tasks.length?'<div class="journal-entry-tasks">'+taskChipsHtml(tasks)+'</div>':'')+
+        (day.journal&&day.journal.trim()?'<div class="journal-entry-text">'+escapeHtml(day.journal)+'</div>':'<div class="journal-entry-empty">这天有完成记录，还没有写日记。</div>')+
+        '</article>';
+    }).join("");
+  }
+  function openJournalOverview(){
+    renderJournalOverview();
+    openBackdrop("journal-overview-backdrop");
+  }
+  document.getElementById("journal-sort-btn").addEventListener("click",()=>{
+    journalSortAscending=!journalSortAscending;
+    renderJournalOverview();
+  });
+  journalOverviewList.addEventListener("click",(e)=>{
+    const btn=e.target.closest("[data-journal-date]");
+    if(btn) goToJournalDate(btn.dataset.journalDate);
+  });
+  document.getElementById("journal-overview-close").addEventListener("click",()=>closeBackdrop("journal-overview-backdrop"));
+  journalOverviewBackdrop.addEventListener("click",(e)=>{
+    if(e.target===journalOverviewBackdrop) closeBackdrop("journal-overview-backdrop");
+  });
+
+  function goToJournalDate(dateStr){
+    const [y,m]=dateStr.split("-").map(Number);
+    calCursor=new Date(y,m-1,1);
+    closeBackdrop("journal-overview-backdrop");
+    document.querySelector('.nav-btn[data-tab="calendar"]').click();
+    renderDayDetail(dateStr);
+    setTimeout(()=>document.getElementById("day-summary").scrollIntoView({behavior:"smooth",block:"start"}),80);
+  }
   function dateTimeMs(dateStr,hm){
     const [y,m,d]=dateStr.split("-").map(Number);
     const [h,mi]=hm.split(":").map(Number);
@@ -1686,12 +1825,13 @@
 
   function dayScore(dateStr){
     const day=state.days[dateStr];
-    if(!day) return {score:0,hasSchedule:false};
+    if(!day) return {score:0,hasSchedule:false,hasJournal:false};
     const score=(day.recurringDone?day.recurringDone.length:0)
       + (day.temp?day.temp.filter(t=>t.done).length:0)
       + (day.schedule?day.schedule.filter(s=>s.done).length:0);
     const hasSchedule = day.schedule && day.schedule.length>0;
-    return {score,hasSchedule};
+    const hasJournal = !!(day.journal&&day.journal.trim());
+    return {score,hasSchedule,hasJournal};
   }
 
   function renderCalendar(){
@@ -1711,7 +1851,7 @@
     }
     for(let d=1; d<=daysInMonth; d++){
       const dateStr=year+"-"+pad2(month+1)+"-"+pad2(d);
-      const {score,hasSchedule}=dayScore(dateStr);
+      const {score,hasSchedule,hasJournal}=dayScore(dateStr);
       const cell=document.createElement("button");
       cell.className="cal-cell"+(dateStr===today?" today":"");
       let bg="var(--surface)", fg="var(--ink)";
@@ -1720,7 +1860,7 @@
       else if(score>=1){ bg="var(--surface-soft)"; }
       cell.style.background=bg;
       cell.style.color=fg;
-      cell.innerHTML=`${d}<span class="dots">${hasSchedule?"<i></i>":""}</span>`;
+      cell.innerHTML=`${d}<span class="dots">${hasSchedule?"<i></i>":""}${hasJournal?'<i class="journal-dot"></i>':""}</span>`;
       cell.addEventListener("click",()=>renderDayDetail(dateStr));
       grid.appendChild(cell);
     }
@@ -1731,7 +1871,7 @@
 
   function renderDayDetail(dateStr){
     const box=document.getElementById("day-summary");
-    const day=state.days[dateStr] || {temp:[],schedule:[],recurringDone:[]};
+    const day=state.days[dateStr] || {temp:[],schedule:[],recurringDone:[],journal:""};
     const parts=dateStr.split("-").map(Number);
     const dObj=new Date(parts[0],parts[1]-1,parts[2]);
     const label=(parts[1])+"月"+parts[2]+"日 · 周"+WEEKDAY[(dObj.getDay()+6)%7];
@@ -1757,7 +1897,7 @@
       (totalMinutes>0? `<span class="day-summary-total">约 ${fmtMinutes(totalMinutes)}</span>`:"")+
       `</div>`;
     if(entries.length===0){
-      html+='<div class="empty-hint">这天还没有记录</div>';
+      html+='<div class="empty-hint">这天还没有任务记录</div>';
     }else{
       html+='<ul class="timeline">'+entries.map(e=>{
         const hh=pad2(Math.floor(e.t/60)), mm=pad2(e.t%60);
@@ -1765,7 +1905,23 @@
           <div class="tl-body"><div class="tl-name">${escapeHtml(e.name)}</div><div class="tl-sub">${escapeHtml(e.sub)}</div></div></li>`;
       }).join("")+'</ul>';
     }
+    html+='<div class="journal-day-card">'+
+      '<div class="journal-day-head"><span class="journal-day-title">✎ 每日日记</span><button class="journal-edit-link" type="button" data-open-journal-overview>浏览全部日记</button></div>'+
+      '<textarea class="journal-textarea" data-day-journal-text maxlength="2000" placeholder="写下这一天完成后的感想、记录或吐槽……">'+escapeHtml(day.journal||"")+'</textarea>'+
+      '<div class="journal-actions"><button class="btn btn-primary" type="button" data-save-day-journal>保存这天日记</button></div>'+
+      '</div>';
     box.innerHTML=html;
+    const journalText=box.querySelector("[data-day-journal-text]");
+    box.querySelector("[data-save-day-journal]").addEventListener("click",()=>{
+      const savedDay=ensureDay(dateStr);
+      savedDay.journal=journalText.value.trim();
+      savedDay.journalUpdatedAt=Date.now();
+      saveState();
+      renderCalendar();
+      renderDayDetail(dateStr);
+      toast(savedDay.journal?"日记已保存":"日记已清空");
+    });
+    box.querySelector("[data-open-journal-overview]").addEventListener("click",openJournalOverview);
   }
 
   /* ---------------- add task sheet ---------------- */
