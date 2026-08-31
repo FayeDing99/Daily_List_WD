@@ -295,6 +295,7 @@
 
   .item-body{flex:1;min-width:0;}
   .item-name{font-weight:800;font-size:15px;line-height:1.3;}
+  .item-card.temp .item-name,.item-card.schedule .item-name{cursor:text;user-select:none;-webkit-user-select:none;}
   .item-card.is-done .item-name{text-decoration:line-through;text-decoration-color:var(--ink-3);}
   .item-meta{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:12px;color:var(--ink-2);font-weight:700;flex-wrap:wrap;}
   .meta-time{color:var(--teal);}
@@ -520,6 +521,22 @@
   .lead-toggle-label input{width:18px;height:18px;accent-color:var(--accent);flex:none;}
   .lead-amount-row{margin-top:10px;}
   .lead-amount-row[hidden]{display:none!important;}
+  .repeat-switch{display:flex;gap:7px;}
+  .repeat-opt{
+    flex:1;border:1.6px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 6px;
+    color:var(--ink-2);font-family:inherit;font-size:12.5px;font-weight:800;cursor:pointer;
+  }
+  .repeat-opt.active{border-color:var(--accent);background:var(--accent-tint);color:var(--accent);}
+  .repeat-details{margin-top:11px;background:var(--surface-soft);border-radius:15px;padding:12px;}
+  .repeat-details[hidden],.weekly-options[hidden]{display:none!important;}
+  .repeat-sub-label{display:block;color:var(--ink-2);font-size:12px;font-weight:800;margin:0 0 7px;}
+  .weekday-picker{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:12px;}
+  .weekday-btn{
+    aspect-ratio:1;border:1.4px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink-2);
+    font-family:inherit;font-size:11.5px;font-weight:900;cursor:pointer;padding:0;
+  }
+  .weekday-btn.active{border-color:var(--accent);background:var(--accent);color:var(--accent-ink);}
+  .repeat-note{font-size:11.5px;color:var(--ink-3);font-weight:700;line-height:1.5;margin-top:7px;}
   .hint-warn{
     display:block;background:transparent;color:var(--ink-2);
     border-radius:0;padding:0 2px;font-size:12.5px;font-weight:700;margin:-2px 0 14px;
@@ -862,6 +879,32 @@
         </div>
       </div>
       <div class="field">
+        <label>循环日程</label>
+        <div class="repeat-switch" id="repeat-switch">
+          <button class="repeat-opt active" type="button" data-repeat="none">不重复</button>
+          <button class="repeat-opt" type="button" data-repeat="daily">每天</button>
+          <button class="repeat-opt" type="button" data-repeat="weekly">每周</button>
+        </div>
+        <div class="repeat-details" id="repeat-details" hidden>
+          <div class="weekly-options" id="weekly-options" hidden>
+            <span class="repeat-sub-label">选择上课／事件发生的星期</span>
+            <div class="weekday-picker" id="repeat-weekdays">
+              <button class="weekday-btn" type="button" data-weekday="1">一</button>
+              <button class="weekday-btn" type="button" data-weekday="2">二</button>
+              <button class="weekday-btn" type="button" data-weekday="3">三</button>
+              <button class="weekday-btn" type="button" data-weekday="4">四</button>
+              <button class="weekday-btn" type="button" data-weekday="5">五</button>
+              <button class="weekday-btn" type="button" data-weekday="6">六</button>
+              <button class="weekday-btn" type="button" data-weekday="7">日</button>
+            </div>
+          </div>
+          <span class="repeat-sub-label">循环结束日期</span>
+          <button type="button" class="date-picker-btn" id="f-repeat-until-btn">选择结束日期</button>
+          <input type="hidden" id="f-repeat-until">
+          <div class="repeat-note" id="repeat-note"></div>
+        </div>
+      </div>
+      <div class="field">
         <label class="lead-toggle-label">
           <input type="checkbox" id="f-lead-enable" aria-controls="lead-amount-row" aria-expanded="false">
           除了到点提醒，我还想提前收到提醒
@@ -932,6 +975,20 @@
     <h3 class="sheet-title">管理重复任务</h3>
     <div id="manage-list"></div>
     <button class="btn btn-ghost" id="manage-close-btn">完成</button>
+  </div>
+</div>
+
+<!-- Edit temporary task / schedule name -->
+<div class="backdrop" id="edit-item-backdrop">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title" id="edit-item-title">编辑任务文字</h3>
+    <div class="field">
+      <label for="edit-item-name">名称</label>
+      <input type="text" id="edit-item-name" maxlength="40">
+    </div>
+    <button class="btn btn-primary" id="edit-item-save" type="button">保存修改</button>
+    <button class="btn btn-ghost" id="edit-item-cancel" type="button">取消</button>
   </div>
 </div>
 
@@ -1434,6 +1491,7 @@
       const card=document.createElement("div");
       card.className="item-card schedule"+(s.done?" is-done":"")+(conflict?" conflict":"");
       card.dataset.itemId=s.id;
+      card.title="双击编辑日程文字";
       card.innerHTML=`
         <button class="check" data-act="toggle-schedule" data-id="${s.id}">${s.done?iconCheck():""}</button>
         <div class="item-body">
@@ -1442,6 +1500,7 @@
             <span class="meta-time">${dateLabel}${s.start}–${s.end}</span>
             <span class="meta-chip meta-countdown" data-start="${s.startMs}" data-end="${s.endMs}">${countdownText(s.startMs,s.endMs)}</span>
             ${s.leadMinutes>0?'<span class="meta-chip">提前'+fmtMinutes(s.leadMinutes)+'提醒</span>':""}
+            ${s.recurrenceMode==="daily"?'<span class="meta-chip">每日循环</span>':s.recurrenceMode==="weekly"?'<span class="meta-chip">每周循环</span>':""}
             ${conflict?'<span class="meta-conflict">⚠ 时间冲突</span>':""}
             ${priorityStarsHtml(s.priority)}
           </div>
@@ -1490,6 +1549,7 @@
       const card=document.createElement("div");
       card.className="item-card temp"+(t.done?" is-done":"");
       card.dataset.itemId=t.id;
+      card.title="双击编辑临时任务文字";
       card.innerHTML=`
         <button class="check" data-act="toggle-temp" data-id="${t.id}">${t.done?iconCheck():""}</button>
         <div class="item-body">
@@ -1511,7 +1571,7 @@
   }
 
   function hasConflict(dateStr,start,end,excludeId){
-    const day=ensureDay(dateStr);
+    const day=state.days[dateStr]||{schedule:[]};
     const s1=minutesOfHM(start), e1=minutesOfHM(end);
     return day.schedule.some(o=>{
       if(o.id===excludeId) return false;
@@ -1520,7 +1580,7 @@
     });
   }
   function conflictList(dateStr,start,end,excludeId){
-    const day=ensureDay(dateStr);
+    const day=state.days[dateStr]||{schedule:[]};
     const s1=minutesOfHM(start), e1=minutesOfHM(end);
     return day.schedule.filter(o=>{
       if(o.id===excludeId) return false;
@@ -1747,6 +1807,84 @@
   els.listTemp.addEventListener("click",onListClick);
   els.listSchedule.addEventListener("click",onListClick);
 
+  /* ---------------- double-click text editing ---------------- */
+  const editItemBackdrop=document.getElementById("edit-item-backdrop");
+  const editItemName=document.getElementById("edit-item-name");
+  let editingItemKind=null;
+  let editingItemId=null;
+  function openItemTextEditor(kind,id){
+    let item=null;
+    if(kind==="temp") item=ensureDay(todayStr()).temp.find(task=>task.id===id);
+    if(kind==="schedule"){
+      const found=findScheduleEntry(id);
+      item=found&&found.item;
+    }
+    if(!item) return;
+    editingItemKind=kind;
+    editingItemId=id;
+    document.getElementById("edit-item-title").textContent=kind==="schedule"?"编辑日程文字":"编辑临时任务文字";
+    editItemName.value=item.name;
+    openBackdrop("edit-item-backdrop");
+    setTimeout(()=>{ editItemName.focus(); editItemName.select(); },180);
+  }
+  function closeItemTextEditor(){
+    editingItemKind=null;
+    editingItemId=null;
+    closeBackdrop("edit-item-backdrop");
+  }
+  function editableCardFromEvent(e){
+    if(e.target.closest("button")) return null;
+    const card=e.target.closest(".item-card.temp,.item-card.schedule");
+    if(!card) return null;
+    return {kind:card.classList.contains("schedule")?"schedule":"temp",id:card.dataset.itemId};
+  }
+  function onEditableTaskDoubleClick(e){
+    const target=editableCardFromEvent(e);
+    if(!target) return;
+    e.preventDefault();
+    openItemTextEditor(target.kind,target.id);
+  }
+  els.listTemp.addEventListener("dblclick",onEditableTaskDoubleClick);
+  els.listSchedule.addEventListener("dblclick",onEditableTaskDoubleClick);
+  let lastTaskTap={key:"",time:0};
+  function onEditableTaskTouch(e){
+    if(e.pointerType!=="touch") return;
+    const target=editableCardFromEvent(e);
+    if(!target) return;
+    const now=Date.now();
+    const key=target.kind+":"+target.id;
+    if(lastTaskTap.key===key&&now-lastTaskTap.time<360){
+      e.preventDefault();
+      lastTaskTap={key:"",time:0};
+      openItemTextEditor(target.kind,target.id);
+    }else{
+      lastTaskTap={key,time:now};
+    }
+  }
+  els.listTemp.addEventListener("pointerup",onEditableTaskTouch);
+  els.listSchedule.addEventListener("pointerup",onEditableTaskTouch);
+  document.getElementById("edit-item-save").addEventListener("click",()=>{
+    const name=editItemName.value.trim();
+    if(!name){ toast("请填写名称"); editItemName.focus(); return; }
+    let item=null;
+    if(editingItemKind==="temp") item=ensureDay(todayStr()).temp.find(task=>task.id===editingItemId);
+    if(editingItemKind==="schedule"){
+      const found=findScheduleEntry(editingItemId);
+      item=found&&found.item;
+    }
+    if(!item) return closeItemTextEditor();
+    item.name=name;
+    saveState();
+    closeItemTextEditor();
+    renderToday();
+    if(currentTab==="calendar") renderCalendar();
+    toast("文字已更新");
+  });
+  document.getElementById("edit-item-cancel").addEventListener("click",closeItemTextEditor);
+  editItemBackdrop.addEventListener("click",(e)=>{
+    if(e.target===editItemBackdrop) closeItemTextEditor();
+  });
+
   /* ---------------- minutes popover ---------------- */
   let activePopover=null;
   function closePopover(){ if(activePopover){ activePopover.remove(); activePopover=null; } }
@@ -1931,6 +2069,10 @@
   const fName=document.getElementById("f-name");
   const fDate=document.getElementById("f-date");
   const fDateBtn=document.getElementById("f-date-btn");
+  const fRepeatUntil=document.getElementById("f-repeat-until");
+  const fRepeatUntilBtn=document.getElementById("f-repeat-until-btn");
+  const repeatDetails=document.getElementById("repeat-details");
+  const weeklyOptions=document.getElementById("weekly-options");
   const fStart=document.getElementById("f-start");
   const fEnd=document.getElementById("f-end");
   const fStartBtn=document.getElementById("f-start-btn");
@@ -1990,22 +2132,25 @@
     if(action) action();
   });
 
-  function updateDateButton(){
-    if(!fDate.value){
-      fDateBtn.textContent="选择日期";
-      fDateBtn.classList.remove("chosen");
+  function updateDateButtonFor(input,button,emptyLabel){
+    if(!input.value){
+      button.textContent=emptyLabel;
+      button.classList.remove("chosen");
       return;
     }
-    const [y,m,d]=fDate.value.split("-").map(Number);
-    fDateBtn.textContent=y+"年"+m+"月"+d+"日";
-    fDateBtn.classList.add("chosen");
+    const [y,m,d]=input.value.split("-").map(Number);
+    button.textContent=y+"年"+m+"月"+d+"日";
+    button.classList.add("chosen");
   }
+  function updateDateButton(){ updateDateButtonFor(fDate,fDateBtn,"选择日期"); }
+  function updateRepeatUntilButton(){ updateDateButtonFor(fRepeatUntil,fRepeatUntilBtn,"选择结束日期"); }
 
   document.getElementById("fab-add").addEventListener("click",()=>{
     addType="recurring";
     document.querySelectorAll(".type-opt").forEach(o=>o.classList.toggle("active",o.dataset.type==="recurring"));
     updateAddFormMode();
     fName.value=""; fDate.value=todayStr(); updateDateButton(); fStart.value=""; fEnd.value="";
+    resetRepeatSettings();
     fStartBtn.textContent="选择时间"; fStartBtn.classList.remove("chosen");
     fEndBtn.textContent="选择时间"; fEndBtn.classList.remove("chosen");
     fLeadEnable.checked=false; fLeadAmount.value="15"; fLeadUnit.value="1"; syncLeadReminderVisibility();
@@ -2040,7 +2185,96 @@
       checkConflictPreview();
     }
   }
-  [fDate,fStart,fEnd].forEach(el=>el.addEventListener("input",checkConflictPreview));
+  let repeatMode="none";
+  const selectedRepeatWeekdays=new Set();
+  let lastScheduleStartWeekday=1;
+  function weekdayNumber(dateStr){
+    const day=dateFromStr(dateStr).getDay();
+    return day===0?7:day;
+  }
+  function dateStrPlusDays(dateStr,days){
+    const date=dateFromStr(dateStr);
+    date.setDate(date.getDate()+days);
+    return dateStrOf(date);
+  }
+  function syncRepeatUI(){
+    document.querySelectorAll(".repeat-opt").forEach(btn=>btn.classList.toggle("active",btn.dataset.repeat===repeatMode));
+    repeatDetails.hidden=repeatMode==="none";
+    weeklyOptions.hidden=repeatMode!=="weekly";
+    document.querySelectorAll(".weekday-btn").forEach(btn=>btn.classList.toggle("active",selectedRepeatWeekdays.has(Number(btn.dataset.weekday))));
+    if(repeatMode!=="none"){
+      const plan=buildScheduleOccurrencePlan();
+      document.getElementById("repeat-note").textContent=plan.error?plan.error:("预计创建 "+plan.dates.length+" 次日程，每次都会单独提醒");
+    }
+  }
+  function resetRepeatSettings(){
+    repeatMode="none";
+    selectedRepeatWeekdays.clear();
+    lastScheduleStartWeekday=weekdayNumber(fDate.value||todayStr());
+    selectedRepeatWeekdays.add(lastScheduleStartWeekday);
+    fRepeatUntil.value=dateStrPlusDays(fDate.value||todayStr(),112);
+    updateRepeatUntilButton();
+    syncRepeatUI();
+  }
+  document.getElementById("repeat-switch").addEventListener("click",(e)=>{
+    const btn=e.target.closest("[data-repeat]");
+    if(!btn) return;
+    const previousMode=repeatMode;
+    repeatMode=btn.dataset.repeat;
+    if(repeatMode!=="none"&&repeatMode!==previousMode){
+      fRepeatUntil.value=dateStrPlusDays(fDate.value||todayStr(),repeatMode==="daily"?30:112);
+      updateRepeatUntilButton();
+    }
+    if(repeatMode==="weekly"&&selectedRepeatWeekdays.size===0) selectedRepeatWeekdays.add(weekdayNumber(fDate.value||todayStr()));
+    syncRepeatUI();
+    checkConflictPreview();
+  });
+  document.getElementById("repeat-weekdays").addEventListener("click",(e)=>{
+    const btn=e.target.closest("[data-weekday]");
+    if(!btn) return;
+    const value=Number(btn.dataset.weekday);
+    if(selectedRepeatWeekdays.has(value)) selectedRepeatWeekdays.delete(value); else selectedRepeatWeekdays.add(value);
+    syncRepeatUI();
+    checkConflictPreview();
+  });
+
+  function buildScheduleOccurrencePlan(){
+    if(!fDate.value) return {dates:[],error:"请选择开始日期"};
+    if(repeatMode==="none") return {dates:[fDate.value],error:""};
+    if(!fRepeatUntil.value) return {dates:[],error:"请选择循环结束日期"};
+    const start=dateFromStr(fDate.value), end=dateFromStr(fRepeatUntil.value);
+    if(end<start) return {dates:[],error:"循环结束日期不能早于开始日期"};
+    const span=Math.round((end-start)/86400000);
+    if(span>1095) return {dates:[],error:"循环区间最长支持3年"};
+    if(repeatMode==="weekly"&&selectedRepeatWeekdays.size===0) return {dates:[],error:"请至少选择一个星期"};
+    const dates=[];
+    const cursor=new Date(start);
+    while(cursor<=end){
+      const weekday=cursor.getDay()===0?7:cursor.getDay();
+      if(repeatMode==="daily"||selectedRepeatWeekdays.has(weekday)) dates.push(dateStrOf(cursor));
+      if(dates.length>366) return {dates:[],error:"单次最多创建366次循环日程"};
+      cursor.setDate(cursor.getDate()+1);
+    }
+    if(dates.length===0) return {dates:[],error:"当前设置没有可创建的日期"};
+    return {dates,error:""};
+  }
+
+  [fDate,fStart,fEnd,fRepeatUntil].forEach(el=>el.addEventListener("input",()=>{
+    if(el===fDate&&fDate.value){
+      const nextWeekday=weekdayNumber(fDate.value);
+      if(repeatMode==="weekly"&&selectedRepeatWeekdays.size===1&&selectedRepeatWeekdays.has(lastScheduleStartWeekday)){
+        selectedRepeatWeekdays.clear();
+        selectedRepeatWeekdays.add(nextWeekday);
+      }
+      lastScheduleStartWeekday=nextWeekday;
+    }
+    if(el===fDate&&fRepeatUntil.value&&dateFromStr(fRepeatUntil.value)<dateFromStr(fDate.value)){
+      fRepeatUntil.value=dateStrPlusDays(fDate.value,112);
+      updateRepeatUntilButton();
+    }
+    syncRepeatUI();
+    checkConflictPreview();
+  }));
   function checkConflictPreview(){
     if(addType!=="schedule") return;
     if(!fDate.value||!fStart.value||!fEnd.value){ conflictHint.hidden=true; return; }
@@ -2049,10 +2283,20 @@
       conflictHint.textContent="结束时间要晚于开始时间哦";
       return;
     }
-    const conflicts=conflictList(fDate.value,fStart.value,fEnd.value,null);
-    if(conflicts.length>0){
+    const plan=buildScheduleOccurrencePlan();
+    if(plan.error){
       conflictHint.hidden=false;
-      conflictHint.innerHTML="⚠️ 与「"+escapeHtml(conflicts.map(c=>c.name+" "+c.start+"–"+c.end).join("、"))+"」时间冲突，请确认安排";
+      conflictHint.textContent=plan.error;
+      return;
+    }
+    const conflictDays=plan.dates.map(date=>({date,items:conflictList(date,fStart.value,fEnd.value,null)})).filter(entry=>entry.items.length>0);
+    if(conflictDays.length>0){
+      conflictHint.hidden=false;
+      const preview=conflictDays.slice(0,3).map(entry=>fmtShortDate(entry.date)+" 与「"+entry.items.map(c=>c.name).join("、")+"」冲突").join("；");
+      conflictHint.innerHTML="⚠️ 循环中有 "+conflictDays.length+" 天存在冲突："+escapeHtml(preview)+(conflictDays.length>3?"……":"");
+    }else if(repeatMode!=="none"){
+      conflictHint.hidden=false;
+      conflictHint.textContent="将创建 "+plan.dates.length+" 次循环日程，目前未发现时间冲突";
     }else{
       conflictHint.hidden=true;
     }
@@ -2064,6 +2308,9 @@
   const datePickerTitle=document.getElementById("date-picker-title");
   let datePickerCursor=new Date();
   let datePickerSelected=new Date();
+  let datePickerTargetInput=fDate;
+  let datePickerTargetButton=fDateBtn;
+  let datePickerEmptyLabel="选择日期";
 
   function dateFromStr(value){
     const parts=(value||todayStr()).split("-").map(Number);
@@ -2092,13 +2339,17 @@
     }
     datePickerGrid.innerHTML=html;
   }
-  function openDatePicker(){
-    datePickerSelected=dateFromStr(fDate.value||todayStr());
+  function openDatePicker(input,button,emptyLabel){
+    datePickerTargetInput=input;
+    datePickerTargetButton=button;
+    datePickerEmptyLabel=emptyLabel;
+    datePickerSelected=dateFromStr(input.value||todayStr());
     datePickerCursor=new Date(datePickerSelected.getFullYear(),datePickerSelected.getMonth(),1);
     renderDatePicker();
     openBackdrop("date-picker-backdrop");
   }
-  fDateBtn.addEventListener("click",openDatePicker);
+  fDateBtn.addEventListener("click",()=>openDatePicker(fDate,fDateBtn,"选择日期"));
+  fRepeatUntilBtn.addEventListener("click",()=>openDatePicker(fRepeatUntil,fRepeatUntilBtn,"选择结束日期"));
   datePickerGrid.addEventListener("click",(e)=>{
     const day=e.target.closest(".date-day[data-date]");
     if(!day) return;
@@ -2119,9 +2370,9 @@
     renderDatePicker();
   });
   document.getElementById("date-picker-confirm").addEventListener("click",()=>{
-    fDate.value=dateStrOf(datePickerSelected);
-    updateDateButton();
-    fDate.dispatchEvent(new Event("input"));
+    datePickerTargetInput.value=dateStrOf(datePickerSelected);
+    updateDateButtonFor(datePickerTargetInput,datePickerTargetButton,datePickerEmptyLabel);
+    datePickerTargetInput.dispatchEvent(new Event("input"));
     closeBackdrop("date-picker-backdrop");
   });
   datePickerBackdrop.addEventListener("click",(e)=>{
@@ -2220,22 +2471,30 @@
     }else{
       if(!fDate.value||!fStart.value||!fEnd.value){ toast("请填写完整的日期和时间"); return; }
       if(minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){ toast("结束时间要晚于开始时间"); return; }
-      const day=ensureDay(fDate.value);
+      const plan=buildScheduleOccurrencePlan();
+      if(plan.error){ toast(plan.error); return; }
       let leadMinutes=0;
       if(fLeadEnable.checked){
         const amt=parseInt(fLeadAmount.value,10);
         const unit=parseInt(fLeadUnit.value,10);
         if(amt>0) leadMinutes=amt*unit;
       }
-      day.schedule.push({
-        id:uid(), name, date:fDate.value, start:fStart.value, end:fEnd.value,
-        leadMinutes, done:false,
-        notifiedLead:false, notifiedOnTime:false,
-        createdAt:now, order:now, priority:selectedPriority
+      const recurrenceGroupId=repeatMode==="none"?null:uid();
+      const recurrenceWeekdays=[...selectedRepeatWeekdays].sort((a,b)=>a-b);
+      plan.dates.forEach((date,index)=>{
+        ensureDay(date).schedule.push({
+          id:uid(), name, date, start:fStart.value, end:fEnd.value,
+          leadMinutes, done:false,
+          notifiedLead:false, notifiedOnTime:false,
+          createdAt:now, order:now+index, priority:selectedPriority,
+          recurrenceGroupId, recurrenceMode:repeatMode,
+          recurrenceUntil:repeatMode==="none"?null:fRepeatUntil.value,
+          recurrenceWeekdays:repeatMode==="weekly"?recurrenceWeekdays:[]
+        });
       });
       saveState(); renderToday(); if(currentTab==="calendar") renderCalendar();
       closeBackdrop("add-backdrop");
-      toast("已添加日程");
+      toast(repeatMode==="none"?"已添加日程":"已添加 "+plan.dates.length+" 次循环日程");
       maybeAskNotificationPermission();
     }
   });
