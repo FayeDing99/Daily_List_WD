@@ -606,23 +606,63 @@
   .btn-confirm-delete{background:var(--accent);color:var(--accent-ink);}
 
   /* ---------- garden / pets ---------- */
-  .garden-head{display:flex;align-items:flex-end;justify-content:space-between;margin:6px 2px 16px;}
+  .garden-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:6px 2px 14px;}
   .garden-title{font-family:'Fraunces',serif;font-weight:600;font-size:20px;}
-  .garden-sub{font-size:12.5px;color:var(--ink-2);font-weight:700;margin-top:2px;}
+  .garden-sub{font-size:12.5px;color:var(--ink-2);font-weight:700;margin-top:2px;line-height:1.45;}
+  .garden-actions{display:flex;align-items:stretch;gap:7px;flex:none;}
   .btn-adopt{
     border:none;background:var(--accent);color:var(--accent-ink);border-radius:999px;
-    padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer;flex:none;
+    padding:9px 13px;font-weight:800;font-size:12px;cursor:pointer;flex:none;font-family:inherit;
   }
-  .pet-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-  .pet-card{
-    background:var(--surface);border-radius:var(--radius-md);padding:16px 12px 14px;
-    box-shadow:var(--shadow-sm);text-align:center;cursor:pointer;border:none;font-family:inherit;
+  .btn-zoo-secondary{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}
+  .gacha-entry{
+    display:flex;align-items:center;gap:6px;border:0;background:var(--teal-tint);color:var(--teal);
+    border-radius:999px;padding:9px 12px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:800;
   }
-  .pet-card .p-emoji{font-size:40px;line-height:1;display:block;margin-bottom:8px;}
-  .pet-card .p-name{font-weight:800;font-size:14px;}
-  .pet-card .p-stage{font-size:11.5px;color:var(--ink-2);font-weight:700;margin:2px 0 8px;}
-  .pet-bar{height:7px;border-radius:99px;background:var(--surface-soft);overflow:hidden;}
-  .pet-bar i{display:block;height:100%;background:var(--accent);border-radius:99px;}
+  .gacha-entry:hover{filter:brightness(.97);}
+  .gacha-entry-icon{position:relative;width:17px;height:16px;flex:none;}
+  .gacha-entry-icon::before{content:"";position:absolute;left:2px;top:3px;width:11px;height:12px;border:1.5px solid currentColor;border-radius:3px;background:var(--surface);transform:rotate(-7deg);}
+  .gacha-entry-icon::after{content:"";position:absolute;left:6px;top:1px;width:10px;height:12px;border:1.5px solid currentColor;border-radius:3px;background:var(--teal-tint);transform:rotate(7deg);}
+  .zoo-habitat{
+    position:relative;height:430px;border-radius:0;overflow:hidden;touch-action:none;
+    background:var(--bg);box-shadow:none;
+  }
+  .zoo-fence{display:none;}
+  .zoo-pet{
+    position:absolute;width:90px;height:112px;border:0;background:transparent;padding:0;
+    font-family:inherit;color:var(--ink);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;
+    transition:left 1.7s linear,top 1.7s linear;z-index:2;
+  }
+  .zoo-pet.is-dragging{transition:none;z-index:8;cursor:grabbing;}
+  .zoo-pet-canvas{display:block;width:90px;height:90px;image-rendering:pixelated;filter:drop-shadow(0 6px 2px rgba(72,58,43,.14));transform:scaleX(var(--pet-facing,1));}
+  .zoo-pet-name{display:inline-block;margin-top:-2px;background:rgba(255,255,255,.72);border-radius:999px;padding:3px 8px;font-size:10.5px;font-weight:800;line-height:1.2;}
+  [data-theme="dark"] .zoo-pet-name{background:rgba(41,38,33,.72);}
+  .zoo-pet-mood{position:absolute;right:2px;top:2px;min-width:26px;padding:4px 6px;border-radius:10px;background:var(--surface);box-shadow:var(--shadow-sm);font-size:11px;font-weight:800;opacity:0;transform:translateY(4px);transition:.2s;pointer-events:none;}
+  .zoo-pet.show-mood .zoo-pet-mood{opacity:1;transform:translateY(0);}
+  .zoo-pet.is-bouncing .zoo-pet-canvas{animation:zooPetBounce .38s ease-out;}
+  .zoo-pet.is-held .zoo-pet-canvas{animation:zooPetHeld .7s ease-in-out infinite alternate;filter:drop-shadow(0 14px 4px rgba(72,58,43,.2));}
+  .zoo-pet.is-eating .zoo-pet-canvas{animation:zooPetEat .62s steps(2,end) 2;}
+  @keyframes zooPetBounce{0%{transform:scaleX(var(--pet-facing,1)) translateY(0) scale(1)}25%{transform:scaleX(var(--pet-facing,1)) translateY(5px) scale(1.12,.82)}58%{transform:scaleX(var(--pet-facing,1)) translateY(-18px) scale(.9,1.15)}100%{transform:scaleX(var(--pet-facing,1)) translateY(0) scale(1)}}
+  @keyframes zooPetHeld{from{transform:scaleX(var(--pet-facing,1)) translateY(-9px) rotate(-3deg) scale(1.04)}to{transform:scaleX(var(--pet-facing,1)) translateY(-13px) rotate(3deg) scale(1.04)}}
+  @keyframes zooPetEat{0%,100%{transform:scaleX(var(--pet-facing,1)) translateY(0)}50%{transform:scaleX(var(--pet-facing,1)) translateY(4px)}}
+  .zoo-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:28px;color:#6f695d;font-size:13px;font-weight:800;line-height:1.7;}
+  [data-theme="dark"] .zoo-empty{color:#d8d1c5;}
+  .zoo-selected{margin-top:12px;background:var(--surface);border-radius:20px;padding:13px 14px;box-shadow:var(--shadow-sm);}
+  .zoo-selected[hidden]{display:none;}
+  .zoo-selected-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .zoo-selected-name{font-weight:800;font-size:14px;}
+  .zoo-selected-state{font-size:11px;color:var(--ink-2);font-weight:700;margin-top:1px;}
+  .zoo-meter-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:11px;}
+  .zoo-meter-label{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-2);font-weight:800;margin-bottom:4px;}
+  .zoo-meter{height:7px;border-radius:99px;background:var(--surface-soft);overflow:hidden;}
+  .zoo-meter i{display:block;height:100%;border-radius:99px;transition:width .25s ease;}
+  .zoo-meter.hunger i{background:#d9a062;}.zoo-meter.mood i{background:#d99098;}
+  .zoo-food-row{display:flex;gap:7px;flex-wrap:wrap;}
+  .zoo-food-btn{border:1.4px solid var(--line);background:var(--surface-soft);color:var(--ink);border-radius:12px;padding:7px 10px;font-family:inherit;font-size:11px;font-weight:800;cursor:pointer;}
+  .zoo-food-btn{display:inline-flex;align-items:center;gap:6px;}
+  .zoo-food-btn:disabled{opacity:.42;cursor:not-allowed;}
+  .zoo-food-icon{width:22px;height:22px;image-rendering:pixelated;flex:none;}
+  .zoo-critical{color:#b86858;}
   .garden-empty{
     grid-column:1/-1;text-align:center;color:var(--ink-3);font-weight:700;font-size:13.5px;
     padding:50px 10px;
@@ -634,26 +674,60 @@
     border:1.6px solid var(--line);background:var(--surface);border-radius:16px;padding:14px 4px 10px;
     text-align:center;cursor:pointer;font-family:inherit;
   }
-  .species-opt .s-emoji{font-size:30px;display:block;margin-bottom:6px;}
+  .species-opt canvas{width:54px;height:54px;image-rendering:pixelated;display:block;margin:0 auto 5px;}
   .species-opt .s-name{font-size:12px;font-weight:800;color:var(--ink);}
   .species-opt.owned{opacity:.4;cursor:default;}
   .species-opt.disabled{opacity:.45;cursor:not-allowed;}
   .feed-pet-preview{text-align:center;margin-bottom:18px;}
-  .feed-pet-preview .fp-emoji{font-size:56px;display:block;}
+  .feed-pet-preview canvas{width:94px;height:94px;image-rendering:pixelated;display:block;margin:0 auto;}
   .feed-pet-preview .fp-name{font-family:'Fraunces',serif;font-weight:600;font-size:19px;margin-top:4px;}
   .feed-pet-preview .fp-stage{font-size:12.5px;color:var(--ink-2);font-weight:700;margin:4px 0 10px;}
-  .feed-pet-preview .pet-bar{max-width:220px;margin:0 auto;height:9px;}
+  .feed-preview-meters{max-width:230px;margin:10px auto 0;display:grid;gap:8px;}
   .food-grid{display:flex;flex-direction:column;gap:10px;margin-bottom:6px;}
   .food-opt{
     display:flex;align-items:center;gap:12px;border:1.6px solid var(--line);background:var(--surface);
     border-radius:14px;padding:12px 14px;cursor:pointer;font-family:inherit;text-align:left;width:100%;
   }
-  .food-opt .f-emoji{font-size:24px;flex:none;}
+  .food-opt .f-food-icon{width:32px;height:32px;image-rendering:pixelated;flex:none;}
   .food-opt .f-body{flex:1;}
   .food-opt .f-name{font-weight:800;font-size:14px;}
   .food-opt .f-desc{font-size:11.5px;color:var(--ink-2);font-weight:700;}
   .food-opt .f-cost{font-weight:800;color:var(--gold);font-size:13px;flex:none;font-variant-numeric:tabular-nums;}
   .food-opt.disabled{opacity:.4;cursor:not-allowed;}
+  .food-opt .f-owned{font-size:11px;color:var(--ink-2);font-weight:800;}
+  .feed-hint{font-size:12px;line-height:1.5;color:var(--ink-2);font-weight:700;text-align:center;margin:-6px 0 14px;}
+
+  .gacha-sheet{text-align:center;}
+  .gacha-sheet .sheet-title{margin-bottom:4px;}
+  .gacha-desc{color:var(--ink-2);font-size:12.5px;font-weight:700;line-height:1.5;margin:0 0 12px;}
+  .gacha-balance{display:inline-flex;align-items:center;gap:5px;background:var(--surface-soft);color:var(--ink-2);border-radius:999px;padding:6px 11px;font-size:11px;font-weight:900;margin-bottom:12px;}
+  .gacha-machine{position:relative;width:112px;height:102px;margin:0 auto 9px;perspective:240px;}
+  .gacha-card-back,.gacha-card-front{position:absolute;width:62px;height:78px;border-radius:15px;}
+  .gacha-card-back{left:18px;top:12px;background:var(--teal-tint);border:2px solid var(--teal);transform:rotate(-9deg);}
+  .gacha-card-back::before{content:"";position:absolute;inset:8px;border:1px dashed currentColor;border-radius:10px;opacity:.55;}
+  .gacha-card-front{left:39px;top:10px;background:var(--surface);border:2px solid var(--accent);transform:rotate(8deg);box-shadow:var(--shadow-sm);}
+  .gacha-card-front::before{content:"✦";position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);width:31px;height:31px;border-radius:50%;background:var(--accent-tint);color:var(--accent);font-size:17px;line-height:31px;font-weight:900;}
+  .gacha-card-front::after{content:"";position:absolute;left:9px;right:9px;bottom:9px;height:3px;border-radius:99px;background:var(--line);box-shadow:0 -47px 0 var(--line);}
+  .gacha-machine.is-drawing .gacha-card-back{animation:gachaShuffleBack .54s ease-in-out infinite alternate;}
+  .gacha-machine.is-drawing .gacha-card-front{animation:gachaShuffleFront .54s ease-in-out infinite alternate;}
+  @keyframes gachaShuffleBack{to{transform:translateX(20px) rotate(8deg) translateY(-4px)}}
+  @keyframes gachaShuffleFront{to{transform:translateX(-20px) rotate(-8deg) translateY(4px)}}
+  .gacha-status{min-height:20px;color:var(--ink-2);font-size:12px;font-weight:800;margin-bottom:10px;}
+  .gacha-results{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:0 0 14px;min-height:0;}
+  .gacha-result{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:8px 3px 7px;box-shadow:var(--shadow-sm);opacity:0;transform:translateY(9px) rotate(-2deg) scale(.94);animation:gachaReveal .32s ease-out forwards;}
+  .gacha-result canvas{display:block;width:34px;height:34px;image-rendering:pixelated;margin:0 auto 3px;}
+  .gacha-result span{display:block;font-size:9.5px;font-weight:800;line-height:1.2;color:var(--ink-2);}
+  @keyframes gachaReveal{to{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+  .gacha-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px;}
+  .gacha-draw-btn{border:0;border-radius:14px;padding:12px 8px;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--line);font-family:inherit;font-weight:900;cursor:pointer;}
+  .gacha-draw-btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:none;}
+  .gacha-draw-btn small{display:block;font-size:10px;opacity:.75;margin-top:2px;}
+  .gacha-draw-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  @media (max-width:420px){
+    .garden-head{align-items:flex-start;}.garden-actions{flex-direction:column;gap:5px;}.btn-adopt{padding:8px 11px;}.gacha-entry{padding:8px 10px;justify-content:center;}
+    .zoo-habitat{height:400px;}.zoo-meter-row{grid-template-columns:1fr;gap:8px;}.species-grid{grid-template-columns:repeat(3,1fr);}
+  }
 
   /* alert modal (schedule reminder) */
   .alert-modal{
@@ -720,7 +794,7 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2c1 3-2 4-2 7a4 4 0 0 0 8 0c0-1-.4-2-1-3 2 1 3 3.5 3 6a8 8 0 1 1-16 0c0-4 3-6 4-8 1-1.5 1.5-2.5 2-2Z" fill="currentColor"/></svg>
       <span id="streak-total">0</span>
     </div>
-    <button class="points-badge" id="points-badge-btn" title="积分可以在动物园里换购食物">
+    <button class="points-badge" id="points-badge-btn" title="积分可以在动物园里领养伙伴和抽取食物">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.9 6.26L21.5 9.3l-4.75 4.4L18 20.5 12 17l-6 3.5 1.25-6.8L2.5 9.3l6.6-1.04L12 2z" fill="currentColor"/></svg>
       <span id="points-total">0</span>
     </button>
@@ -788,11 +862,21 @@
     <div class="garden-head">
       <div>
         <div class="garden-title">我的动物园</div>
-        <div class="garden-sub">用积分喂养，看它们慢慢长大</div>
+        <div class="garden-sub">轻点互动，长按可以拎起小动物</div>
       </div>
-      <button class="btn-adopt" id="adopt-open-btn">+ 领养</button>
+      <div class="garden-actions">
+        <button class="gacha-entry" id="gacha-open-btn" type="button" aria-label="打开抽卡">
+          <span class="gacha-entry-icon" aria-hidden="true"></span>
+          <span>抽卡</span>
+        </button>
+        <button class="btn-adopt" id="adopt-open-btn">+ 领养</button>
+      </div>
     </div>
-    <div class="pet-grid" id="pet-grid"></div>
+    <div class="zoo-habitat" id="zoo-habitat" aria-label="互动动物园">
+      <div class="zoo-fence" aria-hidden="true"></div>
+      <div id="pet-grid"></div>
+    </div>
+    <div class="zoo-selected" id="zoo-selected" hidden></div>
   </div>
 
   <button class="fab" id="fab-add" title="添加任务">
@@ -1083,6 +1167,27 @@
   </div>
 </div>
 
+<!-- points gacha sheet -->
+<div class="backdrop" id="gacha-backdrop">
+  <div class="sheet gacha-sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">幸运食盒</h3>
+    <p class="gacha-desc">8 种食物随机掉落，抽到后会自动放进背包</p>
+    <div class="gacha-balance">✦ 当前积分 <span id="gacha-points">0</span></div>
+    <div class="gacha-machine" id="gacha-machine" aria-hidden="true">
+      <div class="gacha-card-back"></div>
+      <div class="gacha-card-front"></div>
+    </div>
+    <div class="gacha-status" id="gacha-status" aria-live="polite">准备好抽取食物啦</div>
+    <div class="gacha-results" id="gacha-results" aria-live="polite"></div>
+    <div class="gacha-actions">
+      <button class="gacha-draw-btn" id="gacha-single-btn" type="button">抽 1 次<small>消耗 3 积分</small></button>
+      <button class="gacha-draw-btn primary" id="gacha-ten-btn" type="button">抽 10 次<small>消耗 30 积分</small></button>
+    </div>
+    <button class="btn btn-ghost" id="gacha-close-btn" type="button">关闭</button>
+  </div>
+</div>
+
 <!-- custom delete confirmation -->
 <div class="backdrop center" id="confirm-backdrop">
   <div class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-body">
@@ -1171,7 +1276,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -1188,6 +1293,21 @@
       if(!parsed.days) parsed.days={};
       if(typeof parsed.pointsSpent!=="number") parsed.pointsSpent=0;
       if(!parsed.pets) parsed.pets=[];
+      if(!parsed.zooInventory) parsed.zooInventory={apple:1};
+      if(typeof parsed.zooInventory.feast!=="number") parsed.zooInventory.feast=(parsed.zooInventory.cake||0);
+      if(typeof parsed.zooInventory.apple!=="number") parsed.zooInventory.apple=1+(parsed.zooInventory.salad||0);
+      ["catstick","dogfood","turtlecalcium","bamboo","birdseed","bone"].forEach(id=>{ if(typeof parsed.zooInventory[id]!=="number") parsed.zooInventory[id]=0; });
+      if(!Array.isArray(parsed.recycledPets)) parsed.recycledPets=[];
+      const oldSpecies={chick:"bird",cat:"britcat",rabbit:"panda",fox:"shiba",dog:"corgi"};
+      parsed.pets.forEach((pet,index)=>{
+        pet.species=oldSpecies[pet.species]||pet.species;
+        if(typeof pet.satiety!=="number") pet.satiety=Math.max(45,Math.min(100,Number(pet.fed)||45));
+        if(typeof pet.mood!=="number") pet.mood=72;
+        if(typeof pet.lastUpdatedAt!=="number") pet.lastUpdatedAt=Date.now();
+        if(typeof pet.criticalSince!=="number") pet.criticalSince=null;
+        if(typeof pet.x!=="number") pet.x=8+(index*23)%72;
+        if(typeof pet.y!=="number") pet.y=18+(index*29)%55;
+      });
       if(typeof parsed.notificationsEnabled!=="boolean") parsed.notificationsEnabled=false;
       if(!["week","fortnight","month","all"].includes(parsed.scheduleRange)) parsed.scheduleRange="week";
       if(!parsed.sortMode) parsed.sortMode={};
@@ -1270,28 +1390,32 @@
   }
 
   /* ---------------- pet shop data ---------------- */
-  const ADOPT_COST=15;
+  const ADOPT_COST=5;
   const SPECIES=[
-    {id:"chick",emoji:"🐣",name:"小鸡仔"},
-    {id:"cat",emoji:"🐱",name:"猫咪"},
-    {id:"rabbit",emoji:"🐰",name:"兔子"},
-    {id:"panda",emoji:"🐼",name:"熊猫"},
-    {id:"fox",emoji:"🦊",name:"狐狸"},
-    {id:"dog",emoji:"🐶",name:"小狗"},
-    {id:"turtle",emoji:"🐢",name:"乌龟"},
+    {id:"beaver",name:"河狸"},
+    {id:"panda",name:"熊猫"},
+    {id:"britcat",name:"英短猫"},
+    {id:"calico",name:"三花猫"},
+    {id:"ragdoll",name:"布偶猫"},
+    {id:"corgi",name:"柯基"},
+    {id:"shiba",name:"柴犬"},
+    {id:"golden",name:"金毛"},
+    {id:"bird",name:"小蓝鸟"},
+    {id:"turtle",name:"小乌龟"},
   ];
   const FOODS=[
-    {id:"snack",emoji:"🍪",name:"小零食",cost:10,growth:10},
-    {id:"meal",emoji:"🥗",name:"营养餐",cost:30,growth:30},
-    {id:"feast",emoji:"🍰",name:"豪华大餐",cost:60,growth:60},
+    {id:"apple",name:"苹果",cost:10,satiety:28,mood:8,targets:"all"},
+    {id:"catstick",name:"猫条",cost:12,satiety:34,mood:12,targets:["britcat","calico","ragdoll"]},
+    {id:"dogfood",name:"狗粮",cost:14,satiety:38,mood:9,targets:["corgi","shiba","golden"]},
+    {id:"feast",name:"豪华大餐",cost:60,satiety:68,mood:20,targets:"all"},
+    {id:"turtlecalcium",name:"高钙龟粮",cost:14,satiety:42,mood:10,targets:["turtle"]},
+    {id:"bamboo",name:"鲜竹子",cost:16,satiety:45,mood:13,targets:["panda"]},
+    {id:"birdseed",name:"鸟食",cost:10,satiety:34,mood:10,targets:["bird"]},
+    {id:"bone",name:"磨牙骨头",cost:18,satiety:42,mood:16,targets:["corgi","shiba","golden"]},
   ];
-  const PET_STAGE_MAX=100;
-  function petStage(fed){
-    if(fed>=100) return {label:"成年",idx:3};
-    if(fed>=50) return {label:"少年",idx:2};
-    if(fed>=25) return {label:"幼年",idx:1};
-    return {label:"蛋",idx:0};
-  }
+  const PET_VALUE_MAX=100;
+  const HUNGER_PER_HOUR=1;
+  const CRITICAL_GRACE_MS=24*60*60*1000;
 
   /* ---------------- toast ---------------- */
   function toast(msg){
@@ -2951,27 +3075,292 @@
     document.querySelector('.nav-btn[data-tab="garden"]').click();
   });
 
-  function renderGarden(){
-    els.pointsTotal.textContent=pointsBalance();
-    const grid=document.getElementById("pet-grid");
-    if(state.pets.length===0){
-      grid.innerHTML='<div class="garden-empty">还没有小伙伴，点右上角"领养"用积分换一只吧</div>';
+  let selectedPetId=null;
+  let zooDraggingPetId=null;
+  let zooMotionTimer=null;
+  let zooDecayTimer=null;
+
+  function clampPetValue(value){ return Math.max(0,Math.min(PET_VALUE_MAX,value)); }
+  function stepOval(ctx,x,y,w,h,color){
+    ctx.fillStyle=color;
+    ctx.fillRect(x+3,y,w-6,2);
+    ctx.fillRect(x+1,y+2,w-2,2);
+    ctx.fillRect(x,y+4,w,h-8);
+    ctx.fillRect(x+1,y+h-4,w-2,2);
+    ctx.fillRect(x+3,y+h-2,w-6,2);
+  }
+  function drawFoodIcon(canvas,foodId){
+    const ctx=canvas.getContext("2d");canvas.width=16;canvas.height=16;ctx.clearRect(0,0,16,16);ctx.imageSmoothingEnabled=false;
+    if(foodId==="apple"){
+      ctx.fillStyle="#8b7459";ctx.fillRect(8,1,2,3);ctx.fillStyle="#75876b";ctx.fillRect(10,2,3,2);ctx.fillStyle="#b86f67";ctx.fillRect(4,4,8,9);ctx.fillRect(2,6,12,5);ctx.fillStyle="#d39588";ctx.fillRect(4,5,2,2);
+    }else if(foodId==="catstick"){
+      ctx.fillStyle="#c49b7d";ctx.fillRect(5,1,6,14);ctx.fillStyle="#ead7be";ctx.fillRect(6,3,4,8);ctx.fillStyle="#927263";ctx.fillRect(6,1,4,2);ctx.fillRect(6,13,4,1);ctx.fillRect(7,6,2,1);ctx.fillRect(8,5,1,3);
+    }else if(foodId==="dogfood"){
+      ctx.fillStyle="#9d7a67";ctx.fillRect(3,8,10,5);ctx.fillRect(2,7,12,2);ctx.fillStyle="#c39b72";ctx.fillRect(4,5,3,3);ctx.fillRect(8,4,3,4);ctx.fillRect(11,6,2,2);ctx.fillStyle="#796052";ctx.fillRect(5,13,6,1);
+    }else if(foodId==="feast"){
+      ctx.fillStyle="#c5a680";ctx.fillRect(2,9,12,4);ctx.fillRect(4,13,8,1);ctx.fillStyle="#ad746b";ctx.fillRect(3,6,4,3);ctx.fillStyle="#879477";ctx.fillRect(7,5,3,4);ctx.fillStyle="#ddbf88";ctx.fillRect(10,6,3,3);
+    }else if(foodId==="turtlecalcium"){
+      ctx.fillStyle="#75866c";ctx.fillRect(3,8,10,5);ctx.fillRect(2,7,12,2);ctx.fillStyle="#d8cfb9";ctx.fillRect(5,4,3,4);ctx.fillRect(9,5,3,3);ctx.fillStyle="#a6b28b";ctx.fillRect(5,13,6,1);
+    }else if(foodId==="bamboo"){
+      ctx.fillStyle="#75896d";ctx.fillRect(5,2,3,13);ctx.fillRect(9,1,3,12);ctx.fillStyle="#a6b790";ctx.fillRect(5,5,3,1);ctx.fillRect(9,4,3,1);ctx.fillRect(5,10,3,1);ctx.fillRect(9,9,3,1);ctx.fillStyle="#829b78";ctx.fillRect(2,5,3,2);ctx.fillRect(12,7,3,2);
+    }else if(foodId==="birdseed"){
+      ctx.fillStyle="#b49a76";ctx.fillRect(4,4,8,10);ctx.fillStyle="#ddd0b5";ctx.fillRect(5,5,6,7);ctx.fillStyle="#8c765f";ctx.fillRect(4,2,8,3);ctx.fillStyle="#a87958";ctx.fillRect(6,7,2,2);ctx.fillStyle="#8b916b";ctx.fillRect(9,8,2,2);ctx.fillStyle="#c49a66";ctx.fillRect(7,10,2,2);
+    }else if(foodId==="bone"){
+      ctx.fillStyle="#d8c7a5";ctx.fillRect(4,6,8,4);ctx.fillRect(2,4,4,4);ctx.fillRect(10,8,4,4);ctx.fillStyle="#bda985";ctx.fillRect(5,9,6,1);
+    }
+  }
+  function drawFoodIcons(root=document){root.querySelectorAll("canvas[data-food]").forEach(canvas=>drawFoodIcon(canvas,canvas.dataset.food));}
+  function canPetEatFood(pet,food){return food.targets==="all"||food.targets.includes(pet.species);}
+  function drawPetFace(ctx,expression,x1=10,x2=20,y=13){
+    ctx.fillStyle="#3f291f";
+    if(expression==="blink"){
+      ctx.fillRect(x1,y+1,2,1);ctx.fillRect(x2,y+1,2,1);
+    }else{
+      ctx.fillRect(x1,y,2,2);ctx.fillRect(x2,y,2,2);
+    }
+    ctx.fillRect(15,y+3,2,1);
+    if(expression==="sad"){
+      ctx.fillRect(14,y+6,4,1);ctx.fillRect(14,y+7,1,1);ctx.fillRect(17,y+7,1,1);
+    }else if(expression==="hungry"){
+      ctx.fillRect(15,y+6,2,2);
+    }else{
+      ctx.fillRect(15,y+5,1,1);ctx.fillRect(17,y+5,1,1);ctx.fillRect(16,y+6,1,1);
+    }
+  }
+  function drawPetSprite(canvas,speciesId,expression="neutral"){
+    const ctx=canvas.getContext("2d");
+    canvas.width=32;canvas.height=32;ctx.clearRect(0,0,32,32);ctx.imageSmoothingEnabled=false;
+    if(speciesId==="bird"){
+      stepOval(ctx,6,5,21,24,"#83b7df");
+      ctx.fillStyle="#5e97cb";ctx.fillRect(5,16,5,8);ctx.fillRect(23,16,5,8);
+      ctx.fillStyle="#b7d5e9";ctx.fillRect(11,20,11,7);
+      ctx.fillStyle="#83b7df";ctx.fillRect(14,3,2,3);ctx.fillRect(17,4,2,2);
+      ctx.fillStyle="#3f291f";
+      if(expression==="blink"){ctx.fillRect(11,14,2,1);ctx.fillRect(20,14,2,1);}else{ctx.fillRect(11,13,2,2);ctx.fillRect(20,13,2,2);}
+      ctx.fillStyle="#e2a04c";ctx.fillRect(15,16,3,2);ctx.fillRect(16,18,1,1);ctx.fillRect(11,28,3,1);ctx.fillRect(20,28,3,1);
       return;
     }
-    grid.innerHTML=state.pets.map(p=>{
-      const sp=SPECIES.find(s=>s.id===p.species)||SPECIES[0];
-      const stage=petStage(p.fed);
-      const pct=Math.min(100,p.fed);
-      return `<button class="pet-card" data-id="${p.id}">
-        <span class="p-emoji">${sp.emoji}</span>
-        <div class="p-name">${sp.name}</div>
-        <div class="p-stage">${stage.label} · ${p.fed}/${PET_STAGE_MAX}</div>
-        <div class="pet-bar"><i style="width:${pct}%"></i></div>
+    if(speciesId==="turtle"){
+      stepOval(ctx,2,11,13,14,"#a8bd73");
+      stepOval(ctx,11,6,19,20,"#4f7042");
+      ctx.fillStyle="#7f9454";ctx.fillRect(17,8,7,5);ctx.fillRect(13,14,6,6);ctx.fillRect(21,15,6,6);
+      ctx.fillStyle="#a8bd73";ctx.fillRect(6,24,5,4);ctx.fillRect(15,24,5,4);ctx.fillRect(25,23,4,4);ctx.fillRect(29,18,2,3);
+      ctx.fillStyle="#3f291f";
+      if(expression==="blink")ctx.fillRect(6,16,2,1);else ctx.fillRect(6,15,2,2);
+      ctx.fillRect(10,18,2,1);if(expression==="sad")ctx.fillRect(10,19,1,1);
+      return;
+    }
+
+    const palette={
+      beaver:{base:"#c88950",light:"#edc187",dark:"#855233"},
+      panda:{base:"#f2ead9",light:"#fff9eb",dark:"#4d5059"},
+      britcat:{base:"#77859b",light:"#8f9bad",dark:"#617087"},
+      calico:{base:"#f3ead7",light:"#fff8ea",dark:"#51545e",accent:"#df934b"},
+      ragdoll:{base:"#ead8bd",light:"#f8ead3",dark:"#9c8069"},
+      corgi:{base:"#df9149",light:"#f5e2bc",dark:"#b86f36"},
+      shiba:{base:"#db8c3f",light:"#f4dfb7",dark:"#b46e32"},
+      golden:{base:"#e3ad5f",light:"#f3ce8c",dark:"#c88d45"}
+    };
+    const p=palette[speciesId]||palette.beaver;
+
+    if(speciesId==="beaver"){
+      stepOval(ctx,23,16,8,13,p.dark);ctx.fillStyle="#5f3b28";ctx.fillRect(25,20,1,6);ctx.fillRect(23,23,6,1);
+      stepOval(ctx,6,4,21,25,p.base);ctx.fillStyle=p.dark;ctx.fillRect(7,4,5,5);ctx.fillRect(21,4,5,5);
+      ctx.fillStyle="#efa17c";ctx.fillRect(8,5,2,2);ctx.fillRect(23,5,2,2);
+      ctx.fillStyle=p.light;ctx.fillRect(11,16,11,10);ctx.fillRect(11,14,10,5);
+      ctx.fillStyle=p.dark;ctx.fillRect(8,20,4,5);ctx.fillRect(21,20,4,5);ctx.fillRect(9,26,5,2);ctx.fillRect(19,26,5,2);
+      drawPetFace(ctx,expression);ctx.fillStyle="#fff8e7";ctx.fillRect(15,20,2,3);ctx.fillRect(17,20,2,3);return;
+    }
+
+    if(speciesId==="panda"){
+      stepOval(ctx,5,4,23,25,p.base);ctx.fillStyle=p.dark;ctx.fillRect(7,4,5,5);ctx.fillRect(21,4,5,5);
+      stepOval(ctx,8,11,7,7,p.dark);stepOval(ctx,18,11,7,7,p.dark);
+      ctx.fillRect(6,19,6,7);ctx.fillRect(21,19,6,7);ctx.fillRect(9,26,5,3);ctx.fillRect(19,26,5,3);
+      drawPetFace(ctx,expression);return;
+    }
+
+    if(["britcat","calico","ragdoll"].includes(speciesId)){
+      ctx.fillStyle=p.base;ctx.fillRect(7,4,6,7);ctx.fillRect(20,4,6,7);ctx.fillRect(8,3,3,3);ctx.fillRect(22,3,3,3);
+      stepOval(ctx,5,6,23,23,p.base);ctx.fillStyle=p.base;ctx.fillRect(25,18,4,9);ctx.fillRect(27,16,3,5);
+      if(speciesId==="britcat"){
+        ctx.fillStyle=p.dark;ctx.fillRect(8,22,5,5);ctx.fillRect(20,22,5,5);
+      }else if(speciesId==="calico"){
+        ctx.fillStyle=p.accent;ctx.fillRect(5,7,8,7);ctx.fillRect(19,20,7,7);ctx.fillRect(27,17,3,5);
+        ctx.fillStyle=p.dark;ctx.fillRect(20,5,7,8);ctx.fillRect(6,20,5,6);ctx.fillRect(26,22,4,5);
+      }else{
+        ctx.fillStyle=p.dark;ctx.fillRect(7,4,6,6);ctx.fillRect(20,4,6,6);stepOval(ctx,11,10,11,9,p.dark);
+        ctx.fillRect(8,23,5,4);ctx.fillRect(20,23,5,4);ctx.fillRect(27,16,3,8);
+      }
+      drawPetFace(ctx,expression);return;
+    }
+
+    if(["corgi","shiba","golden"].includes(speciesId)){
+      if(speciesId==="golden"){
+        ctx.fillStyle=p.dark;ctx.fillRect(5,8,5,12);ctx.fillRect(23,8,5,12);
+      }else{
+        ctx.fillStyle=p.base;ctx.fillRect(6,3,7,10);ctx.fillRect(20,3,7,10);ctx.fillStyle="#efad82";ctx.fillRect(8,5,3,5);ctx.fillRect(22,5,3,5);
+      }
+      if(speciesId==="shiba"){
+        ctx.fillStyle=p.light;ctx.fillRect(25,18,5,9);ctx.fillRect(27,16,4,4);ctx.fillStyle=p.base;ctx.fillRect(27,19,3,5);
+      }else if(speciesId==="golden"){
+        ctx.fillStyle=p.dark;ctx.fillRect(25,19,5,8);ctx.fillRect(28,17,3,5);
+      }else{
+        ctx.fillStyle=p.light;ctx.fillRect(26,21,4,4);
+      }
+      stepOval(ctx,5,6,23,23,p.base);
+      ctx.fillStyle=p.light;
+      if(speciesId==="corgi")ctx.fillRect(13,7,7,18);
+      else ctx.fillRect(9,15,15,11);
+      stepOval(ctx,11,14,11,7,p.light);
+      ctx.fillStyle=speciesId==="golden"?p.dark:p.base;ctx.fillRect(8,23,5,5);ctx.fillRect(20,23,5,5);
+      drawPetFace(ctx,expression);return;
+    }
+  }
+
+  function applyPetDecay(){
+    const now=Date.now();let changed=false;const recycled=[];
+    state.pets.forEach(pet=>{
+      const hours=Math.max(0,(now-(pet.lastUpdatedAt||now))/3600000);
+      if(hours>.01){
+        const before=pet.satiety;
+        pet.satiety=clampPetValue((pet.satiety||0)-hours*HUNGER_PER_HOUR);
+        if(pet.satiety<25) pet.mood=clampPetValue((pet.mood||0)-hours*.35);
+        pet.lastUpdatedAt=now;
+        if(Math.abs(before-pet.satiety)>.01) changed=true;
+      }
+      if(pet.satiety<=0){
+        pet.satiety=0;
+        if(!pet.criticalSince){pet.criticalSince=now;changed=true;}
+        else if(now-pet.criticalSince>=CRITICAL_GRACE_MS) recycled.push(pet);
+      }else if(pet.criticalSince){pet.criticalSince=null;changed=true;}
+    });
+    if(recycled.length){
+      const ids=new Set(recycled.map(p=>p.id));
+      recycled.forEach(p=>state.recycledPets.push({id:p.id,species:p.species,recycledAt:now}));
+      state.pets=state.pets.filter(p=>!ids.has(p.id));
+      if(ids.has(selectedPetId)) selectedPetId=null;
+      changed=true;toast(recycled.length+"只小动物已由管理员接回保育中心");
+    }
+    if(changed) saveState();
+  }
+
+  function petStateLabel(pet){
+    if(pet.satiety<=0){
+      const hours=Math.max(0,Math.ceil((CRITICAL_GRACE_MS-(Date.now()-(pet.criticalSince||Date.now())))/3600000));
+      return "濒危期 · "+hours+"小时内可投喂救回";
+    }
+    if(pet.satiety<25) return "肚子饿了";
+    if(pet.mood>=80) return "心情很好";
+    if(pet.mood<40) return "有点低落";
+    return "正在悠闲散步";
+  }
+
+  function renderGarden(){
+    els.pointsTotal.textContent=pointsBalance();
+    applyPetDecay();
+    const grid=document.getElementById("pet-grid");
+    if(state.pets.length===0){
+      grid.innerHTML='<div class="zoo-empty">还没有小伙伴<br>点击右上角“领养”邀请第一只动物入住吧</div>';
+      document.getElementById("zoo-selected").hidden=true;
+      return;
+    }
+    grid.innerHTML=state.pets.map(pet=>{
+      const sp=SPECIES.find(s=>s.id===pet.species)||SPECIES[0];
+      return `<button class="zoo-pet" data-id="${pet.id}" style="left:${pet.x}%;top:${pet.y}%" aria-label="${sp.name}，点击互动，长按拖拽">
+        <canvas class="zoo-pet-canvas" data-species="${sp.id}"></canvas>
+        <span class="zoo-pet-name">${sp.name}</span>
+        <span class="zoo-pet-mood">${pet.satiety<25?"饿饿":"开心"}</span>
       </button>`;
     }).join("");
-    grid.querySelectorAll(".pet-card").forEach(card=>{
-      card.addEventListener("click",()=>openFeedSheet(card.dataset.id));
+    grid.querySelectorAll(".zoo-pet").forEach(btn=>{
+      const pet=state.pets.find(p=>p.id===btn.dataset.id);
+      drawPetSprite(btn.querySelector("canvas"),pet.species,pet.satiety<25?"hungry":"neutral");
+      bindZooPet(btn,pet);
     });
+    if(!selectedPetId||!state.pets.some(p=>p.id===selectedPetId)) selectedPetId=state.pets[0].id;
+    renderSelectedPet();
+    ensureZooLoops();
+  }
+
+  function tapZooPet(btn,pet){
+    selectedPetId=pet.id;pet.mood=clampPetValue(pet.mood+1);saveState();
+    btn.classList.remove("is-bouncing");void btn.offsetWidth;btn.classList.add("is-bouncing","show-mood");
+    btn.querySelector(".zoo-pet-mood").textContent=pet.satiety<25?"饿饿":"啵！";
+    drawPetSprite(btn.querySelector("canvas"),pet.species,"happy");
+    setTimeout(()=>{btn.classList.remove("is-bouncing","show-mood");drawPetSprite(btn.querySelector("canvas"),pet.species,pet.satiety<25?"hungry":"neutral");},900);
+    renderSelectedPet();
+  }
+
+  function bindZooPet(btn,pet){
+    let holdTimer=null;let dragging=false;let pointerId=null;
+    btn.addEventListener("contextmenu",e=>e.preventDefault());
+    btn.addEventListener("pointerdown",e=>{
+      pointerId=e.pointerId;btn.setPointerCapture(pointerId);
+      holdTimer=setTimeout(()=>{
+        dragging=true;zooDraggingPetId=pet.id;btn.classList.add("is-dragging","is-held","show-mood");
+        btn.querySelector(".zoo-pet-mood").textContent="拎起来啦";
+      },430);
+    });
+    btn.addEventListener("pointermove",e=>{
+      if(!dragging||e.pointerId!==pointerId) return;
+      const habitat=document.getElementById("zoo-habitat");const rect=habitat.getBoundingClientRect();
+      pet.x=Math.max(0,Math.min(100,(e.clientX-rect.left-45)/(rect.width-90)*100));
+      pet.y=Math.max(4,Math.min(82,(e.clientY-rect.top-45)/(rect.height-112)*100));
+      btn.style.left=pet.x+"%";btn.style.top=pet.y+"%";
+    });
+    function finish(e){
+      if(e.pointerId!==pointerId) return;clearTimeout(holdTimer);
+      if(dragging){
+        dragging=false;zooDraggingPetId=null;btn.classList.remove("is-dragging","is-held","show-mood");saveState();
+        btn.classList.add("is-bouncing");setTimeout(()=>btn.classList.remove("is-bouncing"),400);
+      }else tapZooPet(btn,pet);
+      pointerId=null;
+    }
+    btn.addEventListener("pointerup",finish);btn.addEventListener("pointercancel",finish);
+  }
+
+  function ensureZooLoops(){
+    if(!zooMotionTimer){
+      zooMotionTimer=setInterval(()=>{
+        if(currentTab!=="garden"||zooDraggingPetId||state.pets.length===0) return;
+        const pet=state.pets[Math.floor(Math.random()*state.pets.length)];
+        const btn=document.querySelector('.zoo-pet[data-id="'+pet.id+'"]');if(!btn) return;
+        const nextX=4+Math.random()*82,nextY=13+Math.random()*60;
+        btn.style.setProperty("--pet-facing",nextX<pet.x?-1:1);pet.x=nextX;pet.y=nextY;
+        btn.style.left=pet.x+"%";btn.style.top=pet.y+"%";
+        const expression=pet.satiety<25?"hungry":(Math.random()<.55?"blink":"happy");
+        drawPetSprite(btn.querySelector("canvas"),pet.species,expression);btn.classList.add("show-mood");
+        btn.querySelector(".zoo-pet-mood").textContent=pet.satiety<25?"想吃饭":"悠闲";
+        setTimeout(()=>{if(btn.isConnected){btn.classList.remove("show-mood");drawPetSprite(btn.querySelector("canvas"),pet.species,pet.satiety<25?"hungry":"neutral");}},900);
+        saveState();
+      },4200);
+    }
+    if(!zooDecayTimer){
+      zooDecayTimer=setInterval(()=>{if(currentTab==="garden") renderGarden();else applyPetDecay();},60000);
+    }
+  }
+
+  function renderSelectedPet(){
+    const panel=document.getElementById("zoo-selected");const pet=state.pets.find(p=>p.id===selectedPetId);
+    if(!pet){panel.hidden=true;return;}panel.hidden=false;
+    const sp=SPECIES.find(s=>s.id===pet.species)||SPECIES[0];const critical=pet.satiety<=0;
+    panel.innerHTML=`<div class="zoo-selected-head"><div><div class="zoo-selected-name">${sp.name}</div><div class="zoo-selected-state${critical?" zoo-critical":""}">${petStateLabel(pet)}</div></div><button class="btn-adopt btn-zoo-secondary" id="zoo-detail-btn">查看详情</button></div>
+      <div class="zoo-meter-row"><div><div class="zoo-meter-label"><span>饱腹</span><span>${Math.round(pet.satiety)}</span></div><div class="zoo-meter hunger"><i style="width:${pet.satiety}%"></i></div></div><div><div class="zoo-meter-label"><span>心情</span><span>${Math.round(pet.mood)}</span></div><div class="zoo-meter mood"><i style="width:${pet.mood}%"></i></div></div></div>
+      <div class="zoo-food-row">${FOODS.filter(food=>canPetEatFood(pet,food)).map(food=>`<button class="zoo-food-btn" data-feed="${food.id}" ${(state.zooInventory[food.id]||0)<1?"disabled":""}><canvas class="zoo-food-icon" data-food="${food.id}"></canvas><span>${food.name} · ${state.zooInventory[food.id]||0}</span></button>`).join("")}</div>`;
+    drawFoodIcons(panel);
+    panel.querySelector("#zoo-detail-btn").addEventListener("click",()=>openFeedSheet(pet.id));
+    panel.querySelectorAll("[data-feed]").forEach(btn=>btn.addEventListener("click",()=>feedPet(pet.id,btn.dataset.feed)));
+  }
+
+  function feedPet(petId,foodId){
+    const pet=state.pets.find(p=>p.id===petId),food=FOODS.find(f=>f.id===foodId);if(!pet||!food) return;
+    if(!canPetEatFood(pet,food)){toast("这份食物不适合"+(SPECIES.find(s=>s.id===pet.species)||SPECIES[0]).name);return;}
+    if((state.zooInventory[food.id]||0)<1){toast("背包里没有这种食物啦");return;}
+    state.zooInventory[food.id]-=1;pet.satiety=clampPetValue(pet.satiety+food.satiety);pet.mood=clampPetValue(pet.mood+food.mood);pet.criticalSince=null;pet.lastUpdatedAt=Date.now();saveState();
+    const btn=document.querySelector('.zoo-pet[data-id="'+pet.id+'"]');
+    if(btn){btn.classList.add("is-eating","show-mood");btn.querySelector(".zoo-pet-mood").textContent="好吃";drawPetSprite(btn.querySelector("canvas"),pet.species,"happy");setTimeout(()=>{btn.classList.remove("is-eating","show-mood");drawPetSprite(btn.querySelector("canvas"),pet.species,"neutral");},1300);}
+    toast("饱腹 +"+food.satiety+"，心情 +"+food.mood);renderSelectedPet();
+    if(feedingPetId===pet.id) renderFeedSheet();
   }
 
   /* adopt */
@@ -2993,20 +3382,22 @@
       const canAfford=balance>=ADOPT_COST;
       const cls="species-opt"+(isOwned?" owned":(canAfford?"":" disabled"));
       return `<button class="${cls}" data-id="${sp.id}" ${isOwned?"disabled":""}>
-        <span class="s-emoji">${sp.emoji}</span>
+        <canvas data-species="${sp.id}"></canvas>
         <span class="s-name">${isOwned?"已拥有":sp.name}</span>
       </button>`;
     }).join("");
+    grid.querySelectorAll("canvas[data-species]").forEach(canvas=>drawPetSprite(canvas,canvas.dataset.species));
     grid.querySelectorAll(".species-opt:not(.owned)").forEach(btn=>{
       btn.addEventListener("click",()=>{
         if(pointsBalance()<ADOPT_COST){ toast("积分不够啦，再完成几件任务吧"); return; }
         const sp=SPECIES.find(s=>s.id===btn.dataset.id);
         if(!spendPoints(ADOPT_COST)) return;
-        state.pets.push({id:uid(),species:sp.id,fed:0,adoptedAt:Date.now()});
+        const pet={id:uid(),species:sp.id,satiety:75,mood:80,lastUpdatedAt:Date.now(),criticalSince:null,x:7+Math.random()*70,y:18+Math.random()*48,adoptedAt:Date.now()};
+        state.pets.push(pet);selectedPetId=pet.id;
         saveState();
         closeBackdrop("adopt-backdrop");
         renderGarden();
-        toast("领养成功，快去喂养"+sp.name+"吧");
+        toast("领养成功，"+sp.name+"已经入住动物园");
       });
     });
   }
@@ -3023,43 +3414,80 @@
     const pet=state.pets.find(p=>p.id===feedingPetId);
     if(!pet) return;
     const sp=SPECIES.find(s=>s.id===pet.species)||SPECIES[0];
-    const stage=petStage(pet.fed);
-    const pct=Math.min(100,pet.fed);
     document.getElementById("feed-pet-preview").innerHTML=`
-      <span class="fp-emoji">${sp.emoji}</span>
+      <canvas id="feed-preview-canvas"></canvas>
       <div class="fp-name">${sp.name}</div>
-      <div class="fp-stage">${stage.label} · ${pet.fed}/${PET_STAGE_MAX}</div>
-      <div class="pet-bar"><i style="width:${pct}%"></i></div>
+      <div class="fp-stage${pet.satiety<=0?" zoo-critical":""}">${petStateLabel(pet)}</div>
+      <div class="feed-preview-meters"><div><div class="zoo-meter-label"><span>饱腹</span><span>${Math.round(pet.satiety)}</span></div><div class="zoo-meter hunger"><i style="width:${pet.satiety}%"></i></div></div><div><div class="zoo-meter-label"><span>心情</span><span>${Math.round(pet.mood)}</span></div><div class="zoo-meter mood"><i style="width:${pet.mood}%"></i></div></div></div>
     `;
-    const balance=pointsBalance();
-    const full=pet.fed>=PET_STAGE_MAX;
+    drawPetSprite(document.getElementById("feed-preview-canvas"),pet.species,pet.satiety<25?"hungry":"neutral");
     const foodGrid=document.getElementById("food-grid");
-    if(full){
-      foodGrid.innerHTML='<div class="empty-hint" style="text-align:center;">已经长成成年体啦，先去喂喂别的小伙伴吧</div>';
-      return;
-    }
-    foodGrid.innerHTML=FOODS.map(f=>{
-      const disabled=balance<f.cost;
+    const hint='<div class="feed-hint">从背包选择食物投喂；食物可以通过抽卡获得</div>';
+    foodGrid.innerHTML=FOODS.filter(f=>canPetEatFood(pet,f)).map(f=>{
+      const owned=state.zooInventory[f.id]||0,disabled=owned<1;
       return `<button class="food-opt${disabled?" disabled":""}" data-id="${f.id}" ${disabled?"disabled":""}>
-        <span class="f-emoji">${f.emoji}</span>
-        <span class="f-body"><span class="f-name">${f.name}</span><br><span class="f-desc">成长值 +${f.growth}</span></span>
-        <span class="f-cost">${f.cost}分</span>
+        <canvas class="f-food-icon" data-food="${f.id}"></canvas>
+        <span class="f-body"><span class="f-name">${f.name}</span><br><span class="f-desc">饱腹 +${f.satiety} · 心情 +${f.mood}</span></span>
+        <span class="f-owned">背包 ${owned}</span>
       </button>`;
-    }).join("");
+    }).join("")+hint;
+    drawFoodIcons(foodGrid);
     foodGrid.querySelectorAll(".food-opt:not(.disabled)").forEach(btn=>{
-      btn.addEventListener("click",()=>{
-        const food=FOODS.find(f=>f.id===btn.dataset.id);
-        if(!spendPoints(food.cost)) { toast("积分不够啦"); return; }
-        pet.fed=Math.min(PET_STAGE_MAX, pet.fed+food.growth);
-        saveState();
-        celebrate(false);
-        renderFeedSheet();
-        renderGarden();
-      });
+      btn.addEventListener("click",()=>feedPet(pet.id,btn.dataset.id));
     });
   }
   document.getElementById("feed-close-btn").addEventListener("click",()=>closeBackdrop("feed-backdrop"));
   feedBackdrop.addEventListener("click",(e)=>{ if(e.target===feedBackdrop) closeBackdrop("feed-backdrop"); });
+
+  /* points gacha */
+  const gachaBackdrop=document.getElementById("gacha-backdrop");
+  const gachaMachine=document.getElementById("gacha-machine");
+  const gachaResults=document.getElementById("gacha-results");
+  const gachaStatus=document.getElementById("gacha-status");
+  const gachaSingleBtn=document.getElementById("gacha-single-btn");
+  const gachaTenBtn=document.getElementById("gacha-ten-btn");
+  let gachaDrawing=false;
+
+  function updateGachaControls(){
+    const balance=pointsBalance();
+    document.getElementById("gacha-points").textContent=balance;
+    els.pointsTotal.textContent=balance;
+    gachaSingleBtn.disabled=gachaDrawing||balance<3;
+    gachaTenBtn.disabled=gachaDrawing||balance<30;
+  }
+  document.getElementById("gacha-open-btn").addEventListener("click",()=>{
+    gachaResults.innerHTML="";
+    gachaStatus.textContent="准备好抽取食物啦";
+    updateGachaControls();
+    openBackdrop("gacha-backdrop");
+  });
+  document.getElementById("gacha-close-btn").addEventListener("click",()=>closeBackdrop("gacha-backdrop"));
+  gachaBackdrop.addEventListener("click",e=>{if(e.target===gachaBackdrop) closeBackdrop("gacha-backdrop");});
+
+  function runFoodGacha(count,cost){
+    if(gachaDrawing) return;
+    if(!spendPoints(cost)){toast("积分不够啦，再完成几件任务吧");updateGachaControls();return;}
+    gachaDrawing=true;
+    saveState();
+    gachaResults.innerHTML="";
+    gachaStatus.textContent=count===1?"食盒转动中…":"十连食盒正在转动…";
+    gachaMachine.classList.add("is-drawing");
+    updateGachaControls();
+    setTimeout(()=>{
+      const rewards=Array.from({length:count},()=>FOODS[Math.floor(Math.random()*FOODS.length)]);
+      rewards.forEach(food=>{state.zooInventory[food.id]=(state.zooInventory[food.id]||0)+1;});
+      saveState();
+      gachaMachine.classList.remove("is-drawing");
+      gachaResults.innerHTML=rewards.map((food,index)=>`<div class="gacha-result" style="animation-delay:${index*55}ms"><canvas data-food="${food.id}"></canvas><span>${food.name}</span></div>`).join("");
+      drawFoodIcons(gachaResults);
+      gachaStatus.textContent=count===1?"抽到一份 "+rewards[0].name+"！":"十份食物已全部放进背包！";
+      gachaDrawing=false;
+      updateGachaControls();
+      renderSelectedPet();
+    },count===1?720:950);
+  }
+  gachaSingleBtn.addEventListener("click",()=>runFoodGacha(1,3));
+  gachaTenBtn.addEventListener("click",()=>runFoodGacha(10,30));
 
   /* ---------------- reminders ---------------- */
   const bellBtn=document.getElementById("bell-btn");
