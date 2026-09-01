@@ -1559,8 +1559,9 @@
     scheduleRangeBtn.title="筛选日程范围："+scheduleRangeText;
     scheduleRangeBtn.setAttribute("aria-label","筛选日程范围："+scheduleRangeText);
 
-    // schedule summary: range-limited and recurring series collapsed to the next occurrence
-    const scheds=applySort(collapseRecurringSchedules(schedulesForSelectedRange()),state.sortMode.schedule);
+    // Schedule summary: show every occurrence in range and keep completed items at the bottom.
+    const sortedSchedules=applySort(schedulesForSelectedRange(),state.sortMode.schedule);
+    const scheds=[...sortedSchedules.filter(s=>!s.done),...sortedSchedules.filter(s=>s.done)];
     els.cntSchedule.textContent=scheds.length? scheds.length+"项":"";
     els.listSchedule.innerHTML="";
     if(scheds.length===0){
@@ -1584,7 +1585,6 @@
             ${hasTime?'<span class="meta-chip meta-countdown" data-start="'+s.startMs+'" data-end="'+s.endMs+'">'+countdownText(s.startMs,s.endMs)+'</span>':""}
             ${s.leadMinutes>0?'<span class="meta-chip">提前'+fmtMinutes(s.leadMinutes)+'提醒</span>':""}
             ${s.recurrenceMode==="daily"?'<span class="meta-chip">每日循环</span>':s.recurrenceMode==="weekly"?'<span class="meta-chip">每周循环</span>':""}
-            ${s.seriesOccurrences>1?'<span class="meta-chip">本范围 '+s.seriesOccurrences+' 次</span>':""}
             ${conflict?'<span class="meta-conflict">⚠ 时间冲突</span>':""}
             ${priorityStarsHtml(s.priority)}
           </div>
@@ -1794,24 +1794,6 @@
     const endDate=selectedScheduleRangeEnd();
     if(!endDate) return upcomingSchedules();
     return upcomingSchedules().filter(schedule=>schedule.date<=endDate);
-  }
-  function collapseRecurringSchedules(items){
-    const series=new Map();
-    const visible=[];
-    items.forEach(schedule=>{
-      if(!schedule.recurrenceGroupId){
-        visible.push(Object.assign({},schedule,{seriesOccurrences:1}));
-        return;
-      }
-      const key=schedule.recurrenceGroupId;
-      if(!series.has(key)) series.set(key,[]);
-      series.get(key).push(schedule);
-    });
-    series.forEach(occurrences=>{
-      occurrences.sort((a,b)=>a.startMs-b.startMs);
-      visible.push(Object.assign({},occurrences[0],{seriesOccurrences:occurrences.length}));
-    });
-    return visible;
   }
   function findScheduleEntry(id){
     for(const dateStr of Object.keys(state.days)){
