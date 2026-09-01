@@ -241,6 +241,9 @@
   }
   .sort-icon-btn.is-set{border-color:var(--accent);color:var(--accent);background:var(--accent-tint);}
   .sort-icon-btn svg{width:14px;height:14px;}
+  .schedule-head-title{display:inline-flex;align-items:center;gap:6px;}
+  .schedule-filter-btn{margin-left:auto;}
+  .schedule-filter-btn + .sort-icon-btn{margin-left:0;}
   .sort-menu{
     position:fixed;z-index:95;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);
     padding:6px;width:168px;
@@ -445,7 +448,7 @@
 
   .field{margin-bottom:14px;}
   .field label{display:block;font-size:12.5px;font-weight:800;color:var(--ink-2);margin-bottom:6px;}
-  .field input[type="text"],.field input[type="date"],.field select{
+  .field input[type="text"],.field input[type="date"],.field input[type="number"],.field select{
     width:100%;border:1.6px solid var(--line);background:var(--surface);border-radius:12px;
     padding:11px 13px;font-size:15px;font-family:inherit;color:var(--ink);font-weight:700;
   }
@@ -744,7 +747,11 @@
       <div class="card-list" id="list-temp"></div>
     </div>
     <div class="section" id="sec-schedule">
-      <div class="section-head">⏰ 日程 <span class="count" id="cnt-schedule"></span>
+      <div class="section-head">
+        <span class="schedule-head-title">⏰ 日程 <span class="count" id="cnt-schedule"></span></span>
+        <button class="sort-icon-btn schedule-filter-btn" id="schedule-range-btn" type="button" title="筛选日程范围：本周" aria-label="筛选日程范围：本周" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6.2 7.1v5.1l-3.6 1.8v-6.9L4 5z"/></svg>
+        </button>
         <button class="sort-icon-btn" id="sort-schedule-btn" data-section="schedule" title="排序方式" aria-label="排序方式">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L4 7M7 4l3 3"/><path d="M17 8v12M17 20l3-3M17 20l-3-3"/></svg>
         </button>
@@ -980,6 +987,29 @@
   </div>
 </div>
 
+<!-- Custom duration sheet -->
+<div class="backdrop" id="custom-duration-backdrop">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">填写自定义用时</h3>
+    <div class="field-row">
+      <div class="field">
+        <label for="custom-duration-value">用时</label>
+        <input type="number" id="custom-duration-value" min="1" max="999" inputmode="numeric" placeholder="例如 90">
+      </div>
+      <div class="field">
+        <label for="custom-duration-unit">单位</label>
+        <select id="custom-duration-unit">
+          <option value="1">分钟</option>
+          <option value="60">小时</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="custom-duration-save" type="button">保存用时</button>
+    <button class="btn btn-ghost" id="custom-duration-cancel" type="button">取消</button>
+  </div>
+</div>
+
 <!-- Manage recurring sheet -->
 <div class="backdrop" id="manage-backdrop">
   <div class="sheet">
@@ -1141,7 +1171,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], notificationsEnabled:false, sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -1159,6 +1189,7 @@
       if(typeof parsed.pointsSpent!=="number") parsed.pointsSpent=0;
       if(!parsed.pets) parsed.pets=[];
       if(typeof parsed.notificationsEnabled!=="boolean") parsed.notificationsEnabled=false;
+      if(!["week","fortnight","month","all"].includes(parsed.scheduleRange)) parsed.scheduleRange="week";
       if(!parsed.sortMode) parsed.sortMode={};
       if(!parsed.sortMode.recurring) parsed.sortMode.recurring="custom";
       if(!parsed.sortMode.temp) parsed.sortMode.temp="custom";
@@ -1523,9 +1554,13 @@
     document.getElementById("sort-recurring-btn").classList.toggle("is-set", state.sortMode.recurring!=="custom");
     document.getElementById("sort-temp-btn").classList.toggle("is-set", state.sortMode.temp!=="custom");
     document.getElementById("sort-schedule-btn").classList.toggle("is-set", state.sortMode.schedule!=="time");
+    const scheduleRangeBtn=document.getElementById("schedule-range-btn");
+    const scheduleRangeText=scheduleRangeLabel(state.scheduleRange);
+    scheduleRangeBtn.title="筛选日程范围："+scheduleRangeText;
+    scheduleRangeBtn.setAttribute("aria-label","筛选日程范围："+scheduleRangeText);
 
-    // schedule (today + all upcoming)
-    const scheds=applySort(upcomingSchedules(),state.sortMode.schedule);
+    // schedule summary: range-limited and recurring series collapsed to the next occurrence
+    const scheds=applySort(collapseRecurringSchedules(schedulesForSelectedRange()),state.sortMode.schedule);
     els.cntSchedule.textContent=scheds.length? scheds.length+"项":"";
     els.listSchedule.innerHTML="";
     if(scheds.length===0){
@@ -1549,6 +1584,7 @@
             ${hasTime?'<span class="meta-chip meta-countdown" data-start="'+s.startMs+'" data-end="'+s.endMs+'">'+countdownText(s.startMs,s.endMs)+'</span>':""}
             ${s.leadMinutes>0?'<span class="meta-chip">提前'+fmtMinutes(s.leadMinutes)+'提醒</span>':""}
             ${s.recurrenceMode==="daily"?'<span class="meta-chip">每日循环</span>':s.recurrenceMode==="weekly"?'<span class="meta-chip">每周循环</span>':""}
+            ${s.seriesOccurrences>1?'<span class="meta-chip">本范围 '+s.seriesOccurrences+' 次</span>':""}
             ${conflict?'<span class="meta-conflict">⚠ 时间冲突</span>':""}
             ${priorityStarsHtml(s.priority)}
           </div>
@@ -1739,6 +1775,44 @@
       .filter(s=>s.date===today || s.startMs>now)
       .sort((a,b)=>a.startMs-b.startMs);
   }
+  function selectedScheduleRangeEnd(){
+    if(state.scheduleRange==="all") return null;
+    const now=new Date();
+    const end=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    if(state.scheduleRange==="week"){
+      const mondayIndex=(end.getDay()+6)%7;
+      end.setDate(end.getDate()+(6-mondayIndex));
+    }else if(state.scheduleRange==="fortnight"){
+      end.setDate(end.getDate()+13);
+    }else{
+      // Keep a full rolling-month window so schedules do not vanish near month end.
+      end.setDate(end.getDate()+30);
+    }
+    return dateStrOf(end);
+  }
+  function schedulesForSelectedRange(){
+    const endDate=selectedScheduleRangeEnd();
+    if(!endDate) return upcomingSchedules();
+    return upcomingSchedules().filter(schedule=>schedule.date<=endDate);
+  }
+  function collapseRecurringSchedules(items){
+    const series=new Map();
+    const visible=[];
+    items.forEach(schedule=>{
+      if(!schedule.recurrenceGroupId){
+        visible.push(Object.assign({},schedule,{seriesOccurrences:1}));
+        return;
+      }
+      const key=schedule.recurrenceGroupId;
+      if(!series.has(key)) series.set(key,[]);
+      series.get(key).push(schedule);
+    });
+    series.forEach(occurrences=>{
+      occurrences.sort((a,b)=>a.startMs-b.startMs);
+      visible.push(Object.assign({},occurrences[0],{seriesOccurrences:occurrences.length}));
+    });
+    return visible;
+  }
   function findScheduleEntry(id){
     for(const dateStr of Object.keys(state.days)){
       const day=state.days[dateStr];
@@ -1918,7 +1992,6 @@
   els.listRecurring.addEventListener("click",onListClick);
   els.listTemp.addEventListener("click",onListClick);
   els.listSchedule.addEventListener("click",onListClick);
-
   /* ---------------- long-press text editing ---------------- */
   const editItemBackdrop=document.getElementById("edit-item-backdrop");
   const editItemName=document.getElementById("edit-item-name");
@@ -2031,10 +2104,8 @@
       if(!c) return;
       let val=c.dataset.m;
       if(val==="custom"){
-        const input=prompt("输入用时（分钟）：","");
-        const n=parseInt(input,10);
-        if(!isNaN(n) && n>0) applyMinutes(kind,id,n);
         closePopover();
+        openCustomDurationEditor(kind,id);
         return;
       }
       const n=parseInt(val,10);
@@ -2051,6 +2122,42 @@
       document.removeEventListener("click",outsidePopover,{capture:true});
     }
   }
+  const customDurationBackdrop=document.getElementById("custom-duration-backdrop");
+  const customDurationValue=document.getElementById("custom-duration-value");
+  const customDurationUnit=document.getElementById("custom-duration-unit");
+  let customDurationKind=null;
+  let customDurationId=null;
+  function currentMinutesValue(kind,id){
+    const day=ensureDay(todayStr());
+    if(kind==="recurring"){
+      const item=day.recurringDone.find(entry=>entry.templateId===id);
+      return item&&item.minutes||0;
+    }
+    const item=day.temp.find(entry=>entry.id===id);
+    return item&&item.minutes||0;
+  }
+  function openCustomDurationEditor(kind,id){
+    customDurationKind=kind;
+    customDurationId=id;
+    const current=currentMinutesValue(kind,id);
+    if(current>0&&current%60===0){ customDurationValue.value=String(current/60); customDurationUnit.value="60"; }
+    else { customDurationValue.value=current?String(current):""; customDurationUnit.value="1"; }
+    openBackdrop("custom-duration-backdrop");
+    setTimeout(()=>customDurationValue.focus(),180);
+  }
+  function closeCustomDurationEditor(){ closeBackdrop("custom-duration-backdrop"); }
+  document.getElementById("custom-duration-save").addEventListener("click",()=>{
+    const amount=parseInt(customDurationValue.value,10);
+    const unit=parseInt(customDurationUnit.value,10);
+    if(!amount||amount<1){ toast("请输入有效的用时"); customDurationValue.focus(); return; }
+    applyMinutes(customDurationKind,customDurationId,amount*unit);
+    closeCustomDurationEditor();
+    toast("用时已保存");
+  });
+  document.getElementById("custom-duration-cancel").addEventListener("click",closeCustomDurationEditor);
+  customDurationBackdrop.addEventListener("click",(e)=>{
+    if(e.target===customDurationBackdrop) closeCustomDurationEditor();
+  });
   function applyMinutes(kind,id,mins){
     const today=todayStr();
     const day=ensureDay(today);
@@ -3062,11 +3169,64 @@
     {value:"time",label:"任务时间"},
     ...SORT_OPTIONS_BASE,
   ];
+  const SCHEDULE_RANGE_OPTIONS=[
+    {value:"week",label:"本周"},
+    {value:"fortnight",label:"未来两周"},
+    {value:"month",label:"未来一月"},
+    {value:"all",label:"全部"},
+  ];
+  function scheduleRangeLabel(value){
+    const option=SCHEDULE_RANGE_OPTIONS.find(item=>item.value===value);
+    return option?option.label:"本周";
+  }
   let activeSortMenu=null;
+  let activeScheduleRangeMenu=null;
   function closeSortMenu(){ if(activeSortMenu){ activeSortMenu.remove(); activeSortMenu=null; document.removeEventListener("click",onOutsideSortMenu,{capture:true}); } }
   function onOutsideSortMenu(e){ if(activeSortMenu && !activeSortMenu.contains(e.target) && !e.target.closest(".sort-icon-btn")) closeSortMenu(); }
+  function closeScheduleRangeMenu(){
+    if(!activeScheduleRangeMenu) return;
+    activeScheduleRangeMenu.remove();
+    activeScheduleRangeMenu=null;
+    document.getElementById("schedule-range-btn").setAttribute("aria-expanded","false");
+    document.removeEventListener("click",onOutsideScheduleRangeMenu,{capture:true});
+  }
+  function onOutsideScheduleRangeMenu(e){
+    if(activeScheduleRangeMenu && !activeScheduleRangeMenu.contains(e.target) && !e.target.closest("#schedule-range-btn")) closeScheduleRangeMenu();
+  }
+  document.getElementById("schedule-range-btn").addEventListener("click",(e)=>{
+    const wasOpen=!!activeScheduleRangeMenu;
+    closeScheduleRangeMenu();
+    closeSortMenu();
+    if(wasOpen) return;
+    const btn=e.currentTarget;
+    const menu=document.createElement("div");
+    menu.className="sort-menu schedule-range-menu";
+    menu.setAttribute("role","menu");
+    menu.setAttribute("aria-label","日程显示范围");
+    menu.innerHTML=SCHEDULE_RANGE_OPTIONS.map(option=>'<button type="button" role="menuitemradio" aria-checked="'+(state.scheduleRange===option.value)+'" data-value="'+option.value+'" class="'+(state.scheduleRange===option.value?"active":"")+'">'+option.label+'</button>').join("");
+    document.body.appendChild(menu);
+    const rect=btn.getBoundingClientRect();
+    let left=rect.left;
+    if(left+168>window.innerWidth-10) left=window.innerWidth-178;
+    if(left<10) left=10;
+    menu.style.left=left+"px";
+    menu.style.top=(rect.bottom+6)+"px";
+    activeScheduleRangeMenu=menu;
+    btn.setAttribute("aria-expanded","true");
+    menu.addEventListener("click",(ev)=>{
+      const optionBtn=ev.target.closest("button");
+      if(!optionBtn) return;
+      state.scheduleRange=optionBtn.dataset.value;
+      saveState();
+      renderToday();
+      closeScheduleRangeMenu();
+    });
+    setTimeout(()=>document.addEventListener("click",onOutsideScheduleRangeMenu,{capture:true}),0);
+    e.stopPropagation();
+  });
   ["recurring","temp","schedule"].forEach(section=>{
     document.getElementById("sort-"+section+"-btn").addEventListener("click",(e)=>{
+      closeScheduleRangeMenu();
       closeSortMenu();
       const btn=e.currentTarget;
       const options=section==="schedule"?SORT_OPTIONS_SCHEDULE:SORT_OPTIONS_BASE;
