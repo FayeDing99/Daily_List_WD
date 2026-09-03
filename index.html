@@ -1319,6 +1319,12 @@
         if(!Array.isArray(day.temp)) day.temp=[];
         if(!Array.isArray(day.schedule)) day.schedule=[];
         if(!Array.isArray(day.recurringDone)) day.recurringDone=[];
+        day.recurringDone.forEach(entry=>{
+          if(!entry.taskName){
+            const task=parsed.recurring.find(item=>item.id===entry.templateId);
+            if(task) entry.taskName=task.name;
+          }
+        });
         if(typeof day.journal!=="string") day.journal="";
         day.temp.forEach(migrateItem);
         day.schedule.forEach(item=>{
@@ -1359,7 +1365,7 @@
     if(changed) saveState();
   }
   function totalStreak(){
-    return state.recurring.reduce((s,r)=>s+(r.total||0),0);
+    return Object.values(state.days).reduce((sum,day)=>sum+(day.recurringDone?day.recurringDone.length:0),0);
   }
 
   const MILESTONES=[7,14,30,50,100,150,200,300,365,500,1000];
@@ -1813,7 +1819,7 @@
     const items=[];
     (day.recurringDone||[]).forEach(done=>{
       const task=state.recurring.find(r=>r.id===done.templateId);
-      items.push(task?task.name:"已删除的重复任务");
+      items.push(task?task.name:(done.taskName||"已删除的重复任务"));
     });
     (day.temp||[]).filter(task=>task.done).forEach(task=>items.push(task.name));
     (day.schedule||[]).filter(task=>task.done).forEach(task=>items.push(task.name));
@@ -1974,7 +1980,7 @@
       day.recurringDone.splice(idx,1);
       tpl.total=Math.max(0,(tpl.total||0)-1);
     }else{
-      day.recurringDone.push({templateId:id,minutes:null,completedAt:Date.now()});
+      day.recurringDone.push({templateId:id,taskName:tpl.name,minutes:null,completedAt:Date.now()});
       tpl.total=(tpl.total||0)+1;
       const milestone=checkMilestone(tpl.total,tpl.name);
       if(!milestone) celebrate(false);
@@ -2077,8 +2083,14 @@
     }
   });
   function deleteRecurring(id){
+    const task=state.recurring.find(r=>r.id===id);
+    if(!task) return;
+    Object.values(state.days).forEach(day=>{
+      (day.recurringDone||[]).forEach(entry=>{
+        if(entry.templateId===id&&!entry.taskName) entry.taskName=task.name;
+      });
+    });
     state.recurring=state.recurring.filter(r=>r.id!==id);
-    Object.values(state.days).forEach(d=>{ d.recurringDone=d.recurringDone.filter(x=>x.templateId!==id); });
     saveState(); renderToday(); renderManageList();
   }
 
@@ -2358,7 +2370,7 @@
     day.recurringDone.forEach(r=>{
       const tpl=state.recurring.find(x=>x.id===r.templateId);
       const t=new Date(r.completedAt);
-      entries.push({t:t.getHours()*60+t.getMinutes(), name:(tpl?tpl.name:"（已删除的任务）")+" ✓", sub: r.minutes? fmtMinutes(r.minutes):"重复任务打卡", color:"var(--accent)", minutes:r.minutes||0});
+      entries.push({t:t.getHours()*60+t.getMinutes(), name:(tpl?tpl.name:(r.taskName||"（已删除的任务）"))+" ✓", sub: r.minutes? fmtMinutes(r.minutes):"重复任务打卡", color:"var(--accent)", minutes:r.minutes||0});
     });
     day.temp.filter(x=>x.done).forEach(x=>{
       const t=new Date(x.completedAt||Date.now());
@@ -3016,7 +3028,7 @@
     });
     list.querySelectorAll("[data-delete-id]").forEach(btn=>{
       btn.addEventListener("click",()=>{
-        askDelete("确认删除重复任务？","任务的累计完成次数也会一并删除。",()=>deleteRecurring(btn.dataset.deleteId));
+        askDelete("确认删除重复任务？","只删除任务，之前的完成记录仍会保留。",()=>deleteRecurring(btn.dataset.deleteId));
       });
     });
   }
