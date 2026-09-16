@@ -813,12 +813,13 @@
       <button class="recurring-manage" id="manage-btn">管理重复任务</button>
     </div>
     <div class="section" id="sec-temp">
-      <div class="section-head">今日临时任务 <span class="count" id="cnt-temp"></span>
+      <div class="section-head">临时任务 <span class="count" id="cnt-temp"></span>
         <button class="sort-icon-btn" id="sort-temp-btn" data-section="temp" title="排序方式" aria-label="排序方式">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L4 7M7 4l3 3"/><path d="M17 8v12M17 20l3-3M17 20l-3-3"/></svg>
         </button>
       </div>
       <div class="card-list" id="list-temp"></div>
+      <button class="recurring-manage" id="manage-temp-btn">管理临时任务</button>
     </div>
     <div class="section" id="sec-schedule">
       <div class="section-head">
@@ -932,7 +933,7 @@
       </div>
       <div class="type-opt" data-type="temp">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-        今日临时
+        临时任务
       </div>
       <div class="type-opt" data-type="schedule">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
@@ -1104,6 +1105,16 @@
   </div>
 </div>
 
+<!-- Manage temporary tasks sheet -->
+<div class="backdrop" id="manage-temp-backdrop">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">管理临时任务</h3>
+    <div id="manage-temp-list"></div>
+    <button class="btn btn-ghost" id="manage-temp-close" type="button">完成</button>
+  </div>
+</div>
+
 <!-- Manage schedules sheet -->
 <div class="backdrop" id="manage-schedule-backdrop">
   <div class="sheet">
@@ -1111,6 +1122,24 @@
     <h3 class="sheet-title">管理日程</h3>
     <div id="manage-schedule-list"></div>
     <button class="btn btn-ghost" id="manage-schedule-close" type="button">完成</button>
+  </div>
+</div>
+
+<!-- Edit temporary task sheet -->
+<div class="backdrop" id="edit-temp-backdrop">
+  <div class="sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">编辑临时任务</h3>
+    <div class="field">
+      <label for="edit-temp-name">任务名称</label>
+      <input type="text" id="edit-temp-name" maxlength="40">
+    </div>
+    <div class="field">
+      <label>优先级</label>
+      <div class="star-picker" id="edit-temp-priority-picker"></div>
+    </div>
+    <button class="btn btn-primary" id="edit-temp-save" type="button">保存修改</button>
+    <button class="btn btn-ghost" id="edit-temp-cancel" type="button">取消</button>
   </div>
 </div>
 
@@ -1172,7 +1201,7 @@
   <div class="sheet gacha-sheet">
     <div class="sheet-grip"></div>
     <h3 class="sheet-title">幸运食盒</h3>
-    <p class="gacha-desc">8 种食物随机掉落，抽到后会自动放进背包</p>
+    <p class="gacha-desc">10 种食物随机掉落，抽到后会自动放进背包</p>
     <div class="gacha-balance">✦ 当前积分 <span id="gacha-points">0</span></div>
     <div class="gacha-machine" id="gacha-machine" aria-hidden="true">
       <div class="gacha-card-back"></div>
@@ -1276,7 +1305,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0,twig:0,meal:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -1296,7 +1325,7 @@
       if(!parsed.zooInventory) parsed.zooInventory={apple:1};
       if(typeof parsed.zooInventory.feast!=="number") parsed.zooInventory.feast=(parsed.zooInventory.cake||0);
       if(typeof parsed.zooInventory.apple!=="number") parsed.zooInventory.apple=1+(parsed.zooInventory.salad||0);
-      ["catstick","dogfood","turtlecalcium","bamboo","birdseed","bone"].forEach(id=>{ if(typeof parsed.zooInventory[id]!=="number") parsed.zooInventory[id]=0; });
+      ["catstick","dogfood","turtlecalcium","bamboo","birdseed","bone","twig","meal"].forEach(id=>{ if(typeof parsed.zooInventory[id]!=="number") parsed.zooInventory[id]=0; });
       if(!Array.isArray(parsed.recycledPets)) parsed.recycledPets=[];
       const oldSpecies={chick:"bird",cat:"britcat",rabbit:"panda",fox:"shiba",dog:"corgi"};
       parsed.pets.forEach((pet,index)=>{
@@ -1371,7 +1400,6 @@
   const MILESTONES=[7,14,30,50,100,150,200,300,365,500,1000];
 
   /* ---------------- points ---------------- */
-  const POINTS_THRESHOLD=3; // 当天完成件数达到这个数才开始计分
   function dayCompletedCount(day){
     if(!day) return 0;
     return (day.recurringDone?day.recurringDone.length:0)
@@ -1379,12 +1407,7 @@
       + (day.schedule?day.schedule.filter(s=>s.done).length:0);
   }
   function totalEarnedPoints(){
-    let sum=0;
-    Object.values(state.days).forEach(day=>{
-      const c=dayCompletedCount(day);
-      if(c>=POINTS_THRESHOLD) sum+=c;
-    });
-    return sum;
+    return Object.values(state.days).reduce((sum,day)=>sum+dayCompletedCount(day),0);
   }
   function pointsBalance(){
     return Math.max(0, totalEarnedPoints()-(state.pointsSpent||0));
@@ -1418,6 +1441,8 @@
     {id:"bamboo",name:"鲜竹子",cost:16,satiety:45,mood:13,targets:["panda"]},
     {id:"birdseed",name:"鸟食",cost:10,satiety:34,mood:10,targets:["bird"]},
     {id:"bone",name:"磨牙骨头",cost:18,satiety:42,mood:16,targets:["corgi","shiba","golden"]},
+    {id:"twig",name:"嫩树枝",cost:14,satiety:40,mood:14,targets:["beaver"]},
+    {id:"meal",name:"美味套餐",cost:34,satiety:52,mood:16,targets:"all"},
   ];
   const PET_VALUE_MAX=100;
   const HUNGER_PER_HOUR=1;
@@ -2116,8 +2141,11 @@
   let editingItemKind=null;
   let editingItemId=null;
   function openItemTextEditor(kind,id){
+    if(kind==="temp"){
+      openTempEditor(id);
+      return;
+    }
     let item=null;
-    if(kind==="temp") item=ensureDay(todayStr()).temp.find(task=>task.id===id);
     if(kind==="schedule"){
       const found=findScheduleEntry(id);
       item=found&&found.item;
@@ -2960,7 +2988,7 @@
       day.temp.push({id:uid(),name,done:false,minutes:null,completedAt:null,createdAt:now,order:now,priority:selectedPriority});
       saveState(); renderToday();
       closeBackdrop("add-backdrop");
-      toast("已添加今日临时任务");
+      toast("已添加临时任务");
     }else{
       if(!fDate.value){ toast("请选择日期"); return; }
       if(fTimeEnable.checked&&(!fStart.value||!fEnd.value)){ toast("请选择完整的开始和结束时间"); return; }
@@ -2996,6 +3024,89 @@
       maybeAskNotificationPermission();
     }
   });
+
+  /* ---------------- manage temporary tasks ---------------- */
+  const manageTempBackdrop=document.getElementById("manage-temp-backdrop");
+  const editTempBackdrop=document.getElementById("edit-temp-backdrop");
+  const editTempName=document.getElementById("edit-temp-name");
+  const editTempPriorityPicker=document.getElementById("edit-temp-priority-picker");
+  editTempPriorityPicker.innerHTML=priorityPicker.innerHTML;
+  let editingTempId=null;
+  let editingTempPriority=3;
+
+  function renderManageTempList(){
+    const list=document.getElementById("manage-temp-list");
+    const items=applySort(ensureDay(todayStr()).temp,state.sortMode.temp).sort((a,b)=>Number(a.done)-Number(b.done));
+    if(items.length===0){
+      list.innerHTML='<div class="empty-hint">还没有临时任务</div>';
+      return;
+    }
+    list.innerHTML=items.map(item=>`
+      <div class="manage-row">
+        <div class="m-main">
+          <div class="m-name">${escapeHtml(item.name)}</div>
+          ${priorityStarsHtml(item.priority)}
+        </div>
+        <span class="m-count">${item.done?"已完成":"未完成"}</span>
+        <div class="manage-actions">
+          <button class="item-edit" data-temp-edit="${item.id}" aria-label="编辑${escapeHtml(item.name)}">${iconEdit()}</button>
+          <button class="item-del" data-temp-delete="${item.id}" aria-label="删除${escapeHtml(item.name)}">${iconTrash()}</button>
+        </div>
+      </div>
+    `).join("");
+  }
+  function renderEditTempPriority(){
+    editTempPriorityPicker.querySelectorAll("button").forEach(btn=>{
+      btn.classList.toggle("filled",Number(btn.dataset.star)<=editingTempPriority);
+    });
+  }
+  function openTempEditor(id){
+    const task=ensureDay(todayStr()).temp.find(item=>item.id===id);
+    if(!task) return;
+    editingTempId=id;
+    editingTempPriority=task.priority||3;
+    editTempName.value=task.name;
+    renderEditTempPriority();
+    openBackdrop("edit-temp-backdrop");
+    setTimeout(()=>{editTempName.focus();editTempName.select();},180);
+  }
+  function closeTempEditor(){
+    editingTempId=null;
+    closeBackdrop("edit-temp-backdrop");
+  }
+  document.getElementById("manage-temp-btn").addEventListener("click",()=>{
+    renderManageTempList();
+    openBackdrop("manage-temp-backdrop");
+  });
+  document.getElementById("manage-temp-close").addEventListener("click",()=>closeBackdrop("manage-temp-backdrop"));
+  manageTempBackdrop.addEventListener("click",e=>{if(e.target===manageTempBackdrop) closeBackdrop("manage-temp-backdrop");});
+  document.getElementById("manage-temp-list").addEventListener("click",e=>{
+    const edit=e.target.closest("[data-temp-edit]");
+    const del=e.target.closest("[data-temp-delete]");
+    if(edit) openTempEditor(edit.dataset.tempEdit);
+    if(del) askDelete("确认删除临时任务？","删除后将无法恢复。",()=>{deleteTemp(del.dataset.tempDelete);renderManageTempList();});
+  });
+  editTempPriorityPicker.addEventListener("click",e=>{
+    const btn=e.target.closest("button");
+    if(!btn) return;
+    editingTempPriority=Number(btn.dataset.star);
+    renderEditTempPriority();
+  });
+  document.getElementById("edit-temp-save").addEventListener("click",()=>{
+    const task=ensureDay(todayStr()).temp.find(item=>item.id===editingTempId);
+    const name=editTempName.value.trim();
+    if(!task) return closeTempEditor();
+    if(!name){toast("请填写任务名称");editTempName.focus();return;}
+    task.name=name;
+    task.priority=editingTempPriority;
+    saveState();
+    renderToday();
+    renderManageTempList();
+    closeTempEditor();
+    toast("临时任务已更新");
+  });
+  document.getElementById("edit-temp-cancel").addEventListener("click",closeTempEditor);
+  editTempBackdrop.addEventListener("click",e=>{if(e.target===editTempBackdrop) closeTempEditor();});
 
   /* ---------------- manage recurring ---------------- */
   document.getElementById("manage-btn").addEventListener("click",()=>{
@@ -3119,6 +3230,10 @@
       ctx.fillStyle="#b49a76";ctx.fillRect(4,4,8,10);ctx.fillStyle="#ddd0b5";ctx.fillRect(5,5,6,7);ctx.fillStyle="#8c765f";ctx.fillRect(4,2,8,3);ctx.fillStyle="#a87958";ctx.fillRect(6,7,2,2);ctx.fillStyle="#8b916b";ctx.fillRect(9,8,2,2);ctx.fillStyle="#c49a66";ctx.fillRect(7,10,2,2);
     }else if(foodId==="bone"){
       ctx.fillStyle="#d8c7a5";ctx.fillRect(4,6,8,4);ctx.fillRect(2,4,4,4);ctx.fillRect(10,8,4,4);ctx.fillStyle="#bda985";ctx.fillRect(5,9,6,1);
+    }else if(foodId==="twig"){
+      ctx.fillStyle="#8a674d";ctx.fillRect(3,11,3,3);ctx.fillRect(5,9,3,3);ctx.fillRect(7,7,3,3);ctx.fillRect(9,5,3,3);ctx.fillRect(11,3,2,3);ctx.fillStyle="#77906f";ctx.fillRect(3,7,4,2);ctx.fillRect(2,6,3,2);ctx.fillRect(9,2,4,2);ctx.fillRect(12,1,2,3);ctx.fillStyle="#a5b58c";ctx.fillRect(5,6,2,2);ctx.fillRect(10,1,2,2);
+    }else if(foodId==="meal"){
+      ctx.fillStyle="#9a7962";ctx.fillRect(2,5,12,8);ctx.fillRect(4,13,8,1);ctx.fillStyle="#ead8b8";ctx.fillRect(3,6,10,5);ctx.fillStyle="#bd776d";ctx.fillRect(4,7,3,3);ctx.fillStyle="#7f9274";ctx.fillRect(8,7,2,3);ctx.fillStyle="#d2ad70";ctx.fillRect(10,7,2,3);ctx.fillStyle="#6f594b";ctx.fillRect(3,11,10,1);
     }
   }
   function drawFoodIcons(root=document){root.querySelectorAll("canvas[data-food]").forEach(canvas=>drawFoodIcon(canvas,canvas.dataset.food));}
