@@ -927,11 +927,11 @@
     <div class="sheet-grip"></div>
     <h3 class="sheet-title" id="add-sheet-title">添加任务</h3>
     <div class="type-switch" id="type-switch">
-      <div class="type-opt active" data-type="recurring">
+      <div class="type-opt" data-type="recurring">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
         重复任务
       </div>
-      <div class="type-opt" data-type="temp">
+      <div class="type-opt active" data-type="temp">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
         临时任务
       </div>
@@ -967,7 +967,7 @@
       <div class="field">
         <label class="lead-toggle-label">
           <input type="checkbox" id="f-time-enable" aria-controls="schedule-time-fields" aria-expanded="false">
-          设置具体的开始与结束时间
+          设置具体时间
         </label>
       </div>
       <div class="field-row" id="schedule-time-fields" hidden>
@@ -977,7 +977,7 @@
           <input type="hidden" id="f-start">
         </div>
         <div class="field">
-          <label>结束时间</label>
+          <label>结束时间（选填）</label>
           <button type="button" class="time-picker-btn" id="f-end-btn">选择时间</button>
           <input type="hidden" id="f-end">
         </div>
@@ -1358,7 +1358,7 @@
         day.temp.forEach(migrateItem);
         day.schedule.forEach(item=>{
           migrateItem(item);
-          if(typeof item.hasTime!=="boolean") item.hasTime=!!(item.start&&item.end);
+          if(typeof item.hasTime!=="boolean") item.hasTime=!!item.start;
         });
       });
       return parsed;
@@ -1426,6 +1426,7 @@
     {id:"britcat",name:"英短猫"},
     {id:"calico",name:"三花猫"},
     {id:"ragdoll",name:"布偶猫"},
+    {id:"lihuacat",name:"狸花猫"},
     {id:"corgi",name:"柯基"},
     {id:"shiba",name:"柴犬"},
     {id:"golden",name:"金毛"},
@@ -1434,7 +1435,7 @@
   ];
   const FOODS=[
     {id:"apple",name:"苹果",cost:10,satiety:28,mood:8,targets:"all"},
-    {id:"catstick",name:"猫条",cost:12,satiety:34,mood:12,targets:["britcat","calico","ragdoll"]},
+    {id:"catstick",name:"猫条",cost:12,satiety:34,mood:12,targets:["britcat","calico","ragdoll","lihuacat"]},
     {id:"dogfood",name:"狗粮",cost:14,satiety:38,mood:9,targets:["corgi","shiba","golden"]},
     {id:"feast",name:"豪华大餐",cost:60,satiety:68,mood:20,targets:"all"},
     {id:"turtlecalcium",name:"高钙龟粮",cost:14,satiety:42,mood:10,targets:["turtle"]},
@@ -1723,8 +1724,9 @@
       els.listSchedule.innerHTML='<div class="empty-hint">暂无日程安排</div>';
     }
     scheds.forEach(s=>{
-      const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
-      const conflict=hasTime&&hasConflict(s.date,s.start,s.end,s.id);
+      const hasTime=scheduleHasStart(s);
+      const hasEnd=scheduleHasEnd(s);
+      const conflict=hasEnd&&hasConflict(s.date,s.start,s.end,s.id);
       const isToday=s.date===today;
       const dateLabel=isToday?"":fmtShortDate(s.date)+" ";
       const card=document.createElement("div");
@@ -1736,8 +1738,8 @@
         <div class="item-body">
           <div class="item-name">${escapeHtml(s.name)}</div>
           <div class="item-meta">
-            <span class="meta-time">${dateLabel}${hasTime?s.start+"–"+s.end:"未设置时间"}</span>
-            ${hasTime?'<span class="meta-chip meta-countdown" data-start="'+s.startMs+'" data-end="'+s.endMs+'">'+countdownText(s.startMs,s.endMs)+'</span>':""}
+            <span class="meta-time">${dateLabel}${scheduleTimeText(s)}</span>
+            ${hasTime?'<span class="meta-chip meta-countdown" data-start="'+s.startMs+'" data-end="'+s.endMs+'" data-has-end="'+hasEnd+'">'+countdownText(s.startMs,s.endMs,hasEnd)+'</span>':""}
             ${s.leadMinutes>0?'<span class="meta-chip">提前'+fmtMinutes(s.leadMinutes)+'提醒</span>':""}
             ${s.recurrenceMode==="daily"?'<span class="meta-chip">每日循环</span>':s.recurrenceMode==="weekly"?'<span class="meta-chip">每周循环</span>':""}
             ${conflict?'<span class="meta-conflict">⚠ 时间冲突</span>':""}
@@ -1752,7 +1754,9 @@
     enableDragReorder(els.listSchedule,"schedule");
 
     // recurring
-    const recItems=applySort(state.recurring,state.sortMode.recurring);
+    const sortedRecurring=applySort(state.recurring,state.sortMode.recurring);
+    const completedRecurringIds=new Set(day.recurringDone.map(entry=>entry.templateId));
+    const recItems=[...sortedRecurring.filter(item=>!completedRecurringIds.has(item.id)),...sortedRecurring.filter(item=>completedRecurringIds.has(item.id))];
     els.cntRecurring.textContent=state.recurring.length? state.recurring.length+"项":"";
     els.listRecurring.innerHTML="";
     if(state.recurring.length===0){
@@ -1809,20 +1813,34 @@
     return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  function scheduleHasStart(schedule){
+    return schedule.hasTime!==false&&!!schedule.start;
+  }
+  function scheduleHasEnd(schedule){
+    return scheduleHasStart(schedule)&&!!schedule.end;
+  }
+  function scheduleTimeText(schedule){
+    if(!scheduleHasStart(schedule)) return "未设置时间";
+    return scheduleHasEnd(schedule)?schedule.start+"–"+schedule.end:schedule.start+" 开始";
+  }
   function hasConflict(dateStr,start,end,excludeId){
+    if(!start||!end) return false;
     const day=state.days[dateStr]||{schedule:[]};
     const s1=minutesOfHM(start), e1=minutesOfHM(end);
     return day.schedule.some(o=>{
       if(o.id===excludeId) return false;
+      if(!scheduleHasEnd(o)) return false;
       const s2=minutesOfHM(o.start), e2=minutesOfHM(o.end);
       return s1<e2 && s2<e1;
     });
   }
   function conflictList(dateStr,start,end,excludeId){
+    if(!start||!end) return [];
     const day=state.days[dateStr]||{schedule:[]};
     const s1=minutesOfHM(start), e1=minutesOfHM(end);
     return day.schedule.filter(o=>{
       if(excludeId instanceof Set?excludeId.has(o.id):o.id===excludeId) return false;
+      if(!scheduleHasEnd(o)) return false;
       const s2=minutesOfHM(o.start), e2=minutesOfHM(o.end);
       return s1<e2 && s2<e1;
     });
@@ -1917,8 +1935,11 @@
       const day=state.days[dateStr];
       if(!day.schedule) return;
       day.schedule.forEach(s=>{
-        const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
-        list.push(Object.assign({},s,{date:dateStr,hasTime,startMs:dateTimeMs(dateStr,hasTime?s.start:"00:00"),endMs:dateTimeMs(dateStr,hasTime?s.end:"23:59")}));
+        const hasTime=scheduleHasStart(s);
+        const hasEnd=scheduleHasEnd(s);
+        const startMs=dateTimeMs(dateStr,hasTime?s.start:"00:00");
+        const endMs=hasEnd?dateTimeMs(dateStr,s.end):startMs;
+        list.push(Object.assign({},s,{date:dateStr,hasTime,hasEnd,startMs,endMs}));
       });
     });
     return list;
@@ -1959,7 +1980,7 @@
     }
     return null;
   }
-  function countdownText(startMs,endMs){
+  function countdownText(startMs,endMs,hasEnd=true){
     const now=Date.now();
     if(now<startMs){
       const diff=startMs-now;
@@ -1969,6 +1990,8 @@
       if(days>0) return "还有"+days+"天"+hours+"小时";
       if(hours>0) return "还有"+hours+"小时"+mins+"分钟";
       return "还有"+mins+"分钟";
+    }else if(!hasEnd){
+      return "已开始";
     }else if(now<endMs){
       return "进行中";
     }
@@ -1977,10 +2000,21 @@
   function tickCountdowns(){
     document.querySelectorAll(".meta-countdown").forEach(el=>{
       const startMs=Number(el.dataset.start), endMs=Number(el.dataset.end);
-      el.textContent=countdownText(startMs,endMs);
+      el.textContent=countdownText(startMs,endMs,el.dataset.hasEnd==="true");
     });
   }
   setInterval(tickCountdowns,30000);
+  let renderedDate=todayStr();
+  function refreshAfterDateChange(){
+    const currentDate=todayStr();
+    if(currentDate===renderedDate) return;
+    renderedDate=currentDate;
+    renderToday();
+    if(currentTab==="calendar") renderCalendar();
+    if(document.getElementById("manage-temp-backdrop").classList.contains("show")) renderManageTempList();
+  }
+  setInterval(refreshAfterDateChange,30000);
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden) refreshAfterDateChange();});
 
   /* ---------------- actions ---------------- */
   function checkMilestone(newTotal, name){
@@ -2082,7 +2116,7 @@
       const item=group.first.item;
       const mode=item.recurrenceMode==="daily"?"每日循环":item.recurrenceMode==="weekly"?"每周循环":"单次日程";
       const range=group.occurrences.length>1?fmtShortDate(group.first.date)+"–"+fmtShortDate(group.last.date):fmtFullDate(group.first.date);
-      const time=item.hasTime!==false&&item.start&&item.end?item.start+"–"+item.end:"未设置时间";
+      const time=scheduleTimeText(item);
       return '<div class="manage-row">'+
         '<div class="m-main"><div class="m-name">'+escapeHtml(item.name)+'</div><div class="m-sub">'+range+' · '+time+' · '+mode+(group.occurrences.length>1?' · '+group.occurrences.length+'次':'')+'</div></div>'+
         '<div class="manage-actions"><button class="item-edit" data-schedule-edit="'+group.key+'" aria-label="编辑日程">'+iconEdit()+'</button><button class="item-del" data-schedule-delete="'+group.key+'" aria-label="删除日程">'+iconTrash()+'</button></div>'+
@@ -2391,9 +2425,10 @@
 
     const entries=[];
     day.schedule.forEach(s=>{
-      const hasTime=s.hasTime!==false&&!!s.start&&!!s.end;
-      const dur=hasTime?minutesOfHM(s.end)-minutesOfHM(s.start):0;
-      entries.push({t:hasTime?minutesOfHM(s.start):0, timeLabel:hasTime?"":"—", name:s.name, sub:(hasTime?s.start+"–"+s.end:"未设置时间")+(s.done?" · 已完成":""), color:"var(--teal)", minutes: dur>0?dur:0});
+      const hasTime=scheduleHasStart(s);
+      const hasEnd=scheduleHasEnd(s);
+      const dur=hasEnd?minutesOfHM(s.end)-minutesOfHM(s.start):0;
+      entries.push({t:hasTime?minutesOfHM(s.start):0, timeLabel:hasTime?"":"—", name:s.name, sub:scheduleTimeText(s)+(s.done?" · 已完成":""), color:"var(--teal)", minutes: dur>0?dur:0});
     });
     day.recurringDone.forEach(r=>{
       const tpl=state.recurring.find(x=>x.id===r.templateId);
@@ -2490,7 +2525,7 @@
     opt.value=n; opt.textContent=n;
     fLeadAmount.appendChild(opt);
   }
-  let addType="recurring";
+  let addType="temp";
   let selectedPriority=3;
   const priorityPicker=document.getElementById("priority-picker");
   function renderPriorityPicker(){
@@ -2549,8 +2584,8 @@
     editScheduleNote.hidden=true;
     addSheetTitle.textContent="添加任务";
     document.getElementById("save-task-btn").textContent="保存";
-    addType="recurring";
-    document.querySelectorAll(".type-opt").forEach(o=>o.classList.toggle("active",o.dataset.type==="recurring"));
+    addType="temp";
+    document.querySelectorAll(".type-opt").forEach(o=>o.classList.toggle("active",o.dataset.type==="temp"));
     updateAddFormMode();
     fName.value=""; fDate.value=todayStr(); updateDateButton(); fStart.value=""; fEnd.value="";
     resetRepeatSettings();
@@ -2703,9 +2738,9 @@
     renderPriorityPicker();
     fDate.value=group.first.date;
     updateDateButton();
-    fTimeEnable.checked=item.hasTime!==false&&!!item.start&&!!item.end;
+    fTimeEnable.checked=scheduleHasStart(item);
     fStart.value=fTimeEnable.checked?item.start:"";
-    fEnd.value=fTimeEnable.checked?item.end:"";
+    fEnd.value=fTimeEnable.checked?(item.end||""):"";
     updateTimeButtonFromValue(fStart,fStartBtn);
     updateTimeButtonFromValue(fEnd,fEndBtn);
     syncScheduleTimeVisibility();
@@ -2764,10 +2799,19 @@
       }
       return;
     }
-    if(!fStart.value||!fEnd.value){ conflictHint.hidden=true; return; }
-    if(minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){
+    if(!fStart.value){ conflictHint.hidden=true; return; }
+    if(fEnd.value&&minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){
       conflictHint.hidden=false;
       conflictHint.textContent="结束时间要晚于开始时间哦";
+      return;
+    }
+    if(!fEnd.value){
+      if(repeatMode!=="none"){
+        conflictHint.hidden=false;
+        conflictHint.textContent="将创建 "+plan.dates.length+" 次仅设置开始时间的循环日程";
+      }else{
+        conflictHint.hidden=true;
+      }
       return;
     }
     const excludedIds=editingScheduleIds();
@@ -2949,7 +2993,7 @@
     const weekdays=[...selectedRepeatWeekdays].sort((a,b)=>a-b);
     plan.dates.forEach((date,index)=>{
       const old=oldByDate.get(date);
-      const hasTime=fTimeEnable.checked;
+      const hasTime=fTimeEnable.checked&&!!fStart.value;
       const sameTiming=old&&old.hasTime===hasTime&&old.start===(hasTime?fStart.value:"")&&old.end===(hasTime?fEnd.value:"")&&Number(old.leadMinutes||0)===Number(leadMinutes||0);
       ensureDay(date).schedule.push({
         id:old?old.id:uid(),name,date,start:hasTime?fStart.value:"",end:hasTime?fEnd.value:"",hasTime,
@@ -2991,8 +3035,8 @@
       toast("已添加临时任务");
     }else{
       if(!fDate.value){ toast("请选择日期"); return; }
-      if(fTimeEnable.checked&&(!fStart.value||!fEnd.value)){ toast("请选择完整的开始和结束时间"); return; }
-      if(fTimeEnable.checked&&minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){ toast("结束时间要晚于开始时间"); return; }
+      if(fTimeEnable.checked&&!fStart.value){ toast("请选择开始时间"); return; }
+      if(fTimeEnable.checked&&fEnd.value&&minutesOfHM(fEnd.value)<=minutesOfHM(fStart.value)){ toast("结束时间要晚于开始时间"); return; }
       const plan=buildScheduleOccurrencePlan();
       if(plan.error){ toast(plan.error); return; }
       let leadMinutes=0;
@@ -3009,7 +3053,7 @@
       const recurrenceWeekdays=[...selectedRepeatWeekdays].sort((a,b)=>a-b);
       plan.dates.forEach((date,index)=>{
         ensureDay(date).schedule.push({
-          id:uid(), name, date, start:fTimeEnable.checked?fStart.value:"", end:fTimeEnable.checked?fEnd.value:"", hasTime:fTimeEnable.checked,
+          id:uid(), name, date, start:fTimeEnable.checked?fStart.value:"", end:fTimeEnable.checked?fEnd.value:"", hasTime:fTimeEnable.checked&&!!fStart.value,
           leadMinutes, done:false,
           notifiedLead:false, notifiedOnTime:false,
           createdAt:now, order:now+index, priority:selectedPriority,
@@ -3284,6 +3328,7 @@
       britcat:{base:"#77859b",light:"#8f9bad",dark:"#617087"},
       calico:{base:"#f3ead7",light:"#fff8ea",dark:"#51545e",accent:"#df934b"},
       ragdoll:{base:"#ead8bd",light:"#f8ead3",dark:"#9c8069"},
+      lihuacat:{base:"#a48861",light:"#d6c39a",dark:"#57493a"},
       corgi:{base:"#df9149",light:"#f5e2bc",dark:"#b86f36"},
       shiba:{base:"#db8c3f",light:"#f4dfb7",dark:"#b46e32"},
       golden:{base:"#e3ad5f",light:"#f3ce8c",dark:"#c88d45"}
@@ -3306,7 +3351,7 @@
       drawPetFace(ctx,expression);return;
     }
 
-    if(["britcat","calico","ragdoll"].includes(speciesId)){
+    if(["britcat","calico","ragdoll","lihuacat"].includes(speciesId)){
       ctx.fillStyle=p.base;ctx.fillRect(7,4,6,7);ctx.fillRect(20,4,6,7);ctx.fillRect(8,3,3,3);ctx.fillRect(22,3,3,3);
       stepOval(ctx,5,6,23,23,p.base);ctx.fillStyle=p.base;ctx.fillRect(25,18,4,9);ctx.fillRect(27,16,3,5);
       if(speciesId==="britcat"){
@@ -3314,6 +3359,11 @@
       }else if(speciesId==="calico"){
         ctx.fillStyle=p.accent;ctx.fillRect(5,7,8,7);ctx.fillRect(19,20,7,7);ctx.fillRect(27,17,3,5);
         ctx.fillStyle=p.dark;ctx.fillRect(20,5,7,8);ctx.fillRect(6,20,5,6);ctx.fillRect(26,22,4,5);
+      }else if(speciesId==="lihuacat"){
+        ctx.fillStyle=p.light;ctx.fillRect(12,16,9,8);
+        ctx.fillStyle=p.dark;ctx.fillRect(14,7,2,4);ctx.fillRect(18,7,2,4);ctx.fillRect(9,10,3,2);ctx.fillRect(21,10,3,2);
+        ctx.fillRect(6,18,5,2);ctx.fillRect(22,18,5,2);ctx.fillRect(8,23,5,2);ctx.fillRect(20,23,5,2);
+        ctx.fillRect(26,18,4,2);ctx.fillRect(26,22,4,2);ctx.fillRect(27,26,3,2);
       }else{
         ctx.fillStyle=p.dark;ctx.fillRect(7,4,6,6);ctx.fillRect(20,4,6,6);stepOval(ctx,11,10,11,9,p.dark);
         ctx.fillRect(8,23,5,4);ctx.fillRect(20,23,5,4);ctx.fillRect(27,16,3,8);
@@ -3654,13 +3704,13 @@
 
   function fireReminder(schedule,isLead){
     const title = isLead ? "⏰ 即将开始："+schedule.name : "🔔 现在开始："+schedule.name;
-    const body = schedule.start+"–"+schedule.end+(isLead?"（提前提醒）":"");
+    const body = scheduleTimeText(schedule)+(isLead?"（提前提醒）":"");
     if("Notification" in window && Notification.permission==="granted"){
       try{ new Notification(title,{body}); }catch(e){ /* ignore */ }
     }
     playAlertTone();
     document.getElementById("alert-title").textContent = isLead? "日程即将开始":"日程提醒";
-    document.getElementById("alert-body").textContent = schedule.name+"　"+schedule.start+"–"+schedule.end;
+    document.getElementById("alert-body").textContent = schedule.name+"　"+scheduleTimeText(schedule);
     openBackdrop("alert-backdrop");
   }
   document.getElementById("alert-ok-btn").addEventListener("click",()=>closeBackdrop("alert-backdrop"));
@@ -3673,7 +3723,7 @@
       const day=state.days[dateStr];
       if(!day.schedule) return;
       day.schedule.forEach(s=>{
-        if(s.hasTime===false||!s.start||!s.end) return;
+        if(!scheduleHasStart(s)) return;
         const parts=dateStr.split("-").map(Number);
         const [sh,sm]=s.start.split(":").map(Number);
         const startTime=new Date(parts[0],parts[1]-1,parts[2],sh,sm,0).getTime();
