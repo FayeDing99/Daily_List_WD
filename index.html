@@ -244,6 +244,14 @@
   .schedule-head-title{display:inline-flex;align-items:center;gap:6px;}
   .schedule-filter-btn{margin-left:auto;}
   .schedule-filter-btn + .sort-icon-btn{margin-left:0;}
+  .temp-divider-control{
+    margin-left:auto;border:1.4px solid var(--line);background:var(--surface-soft);color:var(--ink-2);
+    border-radius:999px;padding:5px 8px;display:inline-flex;align-items:center;gap:4px;flex:none;
+    font-family:inherit;font-size:10.5px;font-weight:900;letter-spacing:0;cursor:pointer;text-transform:none;
+  }
+  .temp-divider-control svg{width:13px;height:13px;}
+  .temp-divider-control.is-set{border-color:var(--amber);color:var(--amber);background:var(--amber-tint);}
+  .temp-divider-control + .sort-icon-btn{margin-left:0;}
   .sort-menu{
     position:fixed;z-index:95;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);
     padding:6px;width:168px;
@@ -256,6 +264,19 @@
   .empty-hint{
     color:var(--ink-3);font-size:13.5px;padding:14px 4px;font-weight:600;
   }
+
+  .temp-section-divider{
+    width:100%;border:none;background:transparent;color:var(--accent);padding:10px 2px 9px;
+    display:flex;align-items:center;justify-content:center;cursor:grab;font-family:inherit;touch-action:none;
+  }
+  .temp-section-divider:active{cursor:grabbing;}
+  .temp-section-divider.dragging{background:var(--accent-tint);border-radius:12px;box-shadow:var(--shadow-sm);}
+  .temp-section-divider::before{
+    content:"";width:33.333%;height:2.25px;flex:none;background:var(--accent);border-radius:999px;opacity:.82;
+  }
+  .temp-section-divider::after{display:none;}
+  .temp-section-divider:hover::before,.temp-section-divider:focus-visible::before,
+  .temp-section-divider.dragging::before{opacity:1;}
 
   .card-list{display:flex;flex-direction:column;}
   .item-card{
@@ -814,6 +835,10 @@
     </div>
     <div class="section" id="sec-temp">
       <div class="section-head">临时任务 <span class="count" id="cnt-temp"></span>
+        <button class="temp-divider-control" id="temp-divider-btn" type="button" title="添加任务分割线" aria-label="添加任务分割线">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 17h16M9 12h6"/></svg>
+          <span>分割线</span>
+        </button>
         <button class="sort-icon-btn" id="sort-temp-btn" data-section="temp" title="排序方式" aria-label="排序方式">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4M7 4L4 7M7 4l3 3"/><path d="M17 8v12M17 20l3-3M17 20l-3-3"/></svg>
         </button>
@@ -1210,8 +1235,8 @@
     <div class="gacha-status" id="gacha-status" aria-live="polite">准备好抽取食物啦</div>
     <div class="gacha-results" id="gacha-results" aria-live="polite"></div>
     <div class="gacha-actions">
-      <button class="gacha-draw-btn" id="gacha-single-btn" type="button">抽 1 次<small>消耗 3 积分</small></button>
-      <button class="gacha-draw-btn primary" id="gacha-ten-btn" type="button">抽 10 次<small>消耗 30 积分</small></button>
+      <button class="gacha-draw-btn" id="gacha-single-btn" type="button">抽 1 次<small>消耗 2 积分</small></button>
+      <button class="gacha-draw-btn primary" id="gacha-ten-btn" type="button">抽 10 次<small>消耗 15 积分</small></button>
     </div>
     <button class="btn btn-ghost" id="gacha-close-btn" type="button">关闭</button>
   </div>
@@ -1305,7 +1330,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0,twig:0,meal:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"} };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0,twig:0,meal:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"}, tempDividerAfterId:null };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -1343,6 +1368,7 @@
       if(!parsed.sortMode.recurring) parsed.sortMode.recurring="custom";
       if(!parsed.sortMode.temp) parsed.sortMode.temp="custom";
       if(!parsed.sortMode.schedule) parsed.sortMode.schedule="time";
+      if(parsed.tempDividerAfterId!==null&&typeof parsed.tempDividerAfterId!=="string") parsed.tempDividerAfterId=null;
       parsed.recurring.forEach(migrateItem);
       Object.values(parsed.days).forEach(day=>{
         if(!Array.isArray(day.temp)) day.temp=[];
@@ -1625,6 +1651,22 @@
     return arr;
   }
 
+  function orderedIncompleteTemps(day){
+    return applySort(day.temp,state.sortMode.temp).filter(item=>!item.done);
+  }
+  function dividerAnchorBeforeTask(day,id){
+    const items=orderedIncompleteTemps(day);
+    const index=items.findIndex(item=>item.id===id);
+    return index>0?items[index-1].id:"top";
+  }
+  function updateTempDividerAnchorFromDom(listEl){
+    const divider=listEl.querySelector(".temp-section-divider");
+    if(!divider) return;
+    let previous=divider.previousElementSibling;
+    while(previous&&(!previous.classList.contains("item-card")||previous.classList.contains("is-done"))) previous=previous.previousElementSibling;
+    state.tempDividerAfterId=previous?previous.dataset.itemId:"top";
+  }
+
   /* ---------------- drag to reorder (long-press) ---------------- */
   function commitOrder(listEl,kind){
     const ids=[...listEl.querySelectorAll(".item-card")].map(c=>c.dataset.itemId);
@@ -1635,6 +1677,7 @@
       const day=ensureDay(todayStr());
       ids.forEach((id,idx)=>{ const t=day.temp.find(x=>x.id===id); if(t) t.order=(idx+1)*10; });
       state.sortMode.temp="custom";
+      updateTempDividerAnchorFromDom(listEl);
     }else if(kind==="schedule"){
       ids.forEach((id,idx)=>{ const found=findScheduleEntry(id); if(found) found.item.order=(idx+1)*10; });
       state.sortMode.schedule="custom";
@@ -1698,6 +1741,63 @@
     });
   }
 
+  function createTempDividerElement(){
+    const divider=document.createElement("button");
+    divider.type="button";
+    divider.className="temp-section-divider";
+    divider.setAttribute("aria-label","长按拖动“以后再做”分割线");
+    return divider;
+  }
+
+  function enableTempDividerDrag(listEl){
+    const divider=listEl.querySelector(".temp-section-divider");
+    if(!divider) return;
+    let holdTimer=null;
+    let dragging=false;
+
+    function onMove(event){
+      if(!dragging) return;
+      event.preventDefault();
+      const incomplete=[...listEl.querySelectorAll(".item-card.temp:not(.is-done)")];
+      let reference=null;
+      for(const card of incomplete){
+        const rect=card.getBoundingClientRect();
+        if(event.clientY<rect.top+rect.height/2){reference=card;break;}
+      }
+      if(reference){
+        if(reference!==divider.nextElementSibling) listEl.insertBefore(divider,reference);
+      }else{
+        const firstDone=listEl.querySelector(".item-card.temp.is-done");
+        if(firstDone) listEl.insertBefore(divider,firstDone);
+        else if(listEl.lastElementChild!==divider) listEl.appendChild(divider);
+      }
+    }
+    function finishDrag(){
+      clearTimeout(holdTimer);
+      window.removeEventListener("pointermove",onMove);
+      window.removeEventListener("pointerup",finishDrag);
+      window.removeEventListener("pointercancel",finishDrag);
+      if(dragging){
+        divider.classList.remove("dragging");
+        updateTempDividerAnchorFromDom(listEl);
+        saveState();
+        renderToday();
+        toast("分割线已移动");
+      }
+      dragging=false;
+    }
+    divider.addEventListener("pointerdown",event=>{
+      if(event.button!==0) return;
+      window.addEventListener("pointermove",onMove,{passive:false});
+      window.addEventListener("pointerup",finishDrag);
+      window.addEventListener("pointercancel",finishDrag);
+      holdTimer=setTimeout(()=>{
+        dragging=true;
+        divider.classList.add("dragging");
+      },320);
+    });
+  }
+
   function renderToday(){
     const today=todayStr();
     carryForwardIncompleteTemps(today);
@@ -1710,6 +1810,11 @@
     document.getElementById("sort-recurring-btn").classList.toggle("is-set", state.sortMode.recurring!=="custom");
     document.getElementById("sort-temp-btn").classList.toggle("is-set", state.sortMode.temp!=="custom");
     document.getElementById("sort-schedule-btn").classList.toggle("is-set", state.sortMode.schedule!=="time");
+    const tempDividerBtn=document.getElementById("temp-divider-btn");
+    const hasTempDivider=state.tempDividerAfterId!==null;
+    tempDividerBtn.classList.toggle("is-set",hasTempDivider);
+    tempDividerBtn.title=hasTempDivider?"移除任务分割线":"添加任务分割线";
+    tempDividerBtn.setAttribute("aria-label",tempDividerBtn.title);
     const scheduleRangeBtn=document.getElementById("schedule-range-btn");
     const scheduleRangeText=scheduleRangeLabel(state.scheduleRange);
     scheduleRangeBtn.title="筛选日程范围："+scheduleRangeText;
@@ -1782,11 +1887,24 @@
     enableDragReorder(els.listRecurring,"recurring");
 
     // temp
-    const tempItems=applySort(day.temp,state.sortMode.temp).sort((a,b)=>Number(a.done)-Number(b.done));
+    const sortedTemp=applySort(day.temp,state.sortMode.temp);
+    const incompleteTemps=sortedTemp.filter(item=>!item.done);
+    const tempItems=[...incompleteTemps,...sortedTemp.filter(item=>item.done)];
     els.cntTemp.textContent=day.temp.length? day.temp.length+"项":"";
     els.listTemp.innerHTML="";
     if(day.temp.length===0){
       els.listTemp.innerHTML='<div class="empty-hint">今天还没有临时任务</div>';
+    }
+    let dividerAnchor=state.tempDividerAfterId;
+    if(dividerAnchor!==null&&dividerAnchor!=="top"&&!incompleteTemps.some(item=>item.id===dividerAnchor)){
+      dividerAnchor=incompleteTemps.length?incompleteTemps[incompleteTemps.length-1].id:"top";
+      state.tempDividerAfterId=dividerAnchor;
+      saveState();
+    }
+    let dividerInserted=false;
+    if(day.temp.length>0&&dividerAnchor==="top"){
+      els.listTemp.appendChild(createTempDividerElement());
+      dividerInserted=true;
     }
     tempItems.forEach(t=>{
       const card=document.createElement("div");
@@ -1804,8 +1922,14 @@
         ${dragHandleHtml(t.id)}
       `;
       els.listTemp.appendChild(card);
+      if(!t.done&&dividerAnchor===t.id){
+        els.listTemp.appendChild(createTempDividerElement());
+        dividerInserted=true;
+      }
     });
+    if(day.temp.length>0&&dividerAnchor!==null&&!dividerInserted) els.listTemp.insertBefore(createTempDividerElement(),els.listTemp.querySelector(".item-card.is-done"));
     enableDragReorder(els.listTemp,"temp");
+    enableTempDividerDrag(els.listTemp);
   }
 
 
@@ -2052,6 +2176,7 @@
     const day=ensureDay(today);
     const t=day.temp.find(x=>x.id===id);
     if(!t) return;
+    if(!t.done&&state.tempDividerAfterId===id) state.tempDividerAfterId=dividerAnchorBeforeTask(day,id);
     t.done=!t.done;
     if(t.done){ t.completedAt=Date.now(); celebrate(false); }
     saveState(); renderToday(); if(currentTab==="calendar") renderCalendar();
@@ -2069,6 +2194,7 @@
   function deleteTemp(id){
     const today=todayStr();
     const day=ensureDay(today);
+    if(state.tempDividerAfterId===id) state.tempDividerAfterId=dividerAnchorBeforeTask(day,id);
     day.temp=day.temp.filter(t=>t.id!==id);
     saveState(); renderToday();
   }
@@ -3070,6 +3196,23 @@
   });
 
   /* ---------------- manage temporary tasks ---------------- */
+  const tempDividerControl=document.getElementById("temp-divider-btn");
+
+  function toggleTempDivider(){
+    const items=orderedIncompleteTemps(ensureDay(todayStr()));
+    if(state.tempDividerAfterId===null){
+      if(items.length===0){toast("先添加临时任务，再放置分割线");return;}
+      state.tempDividerAfterId=items[0].id;
+      toast("已添加分割线，长按横线可以拖动");
+    }else{
+      state.tempDividerAfterId=null;
+      toast("已移除分割线");
+    }
+    saveState();
+    renderToday();
+  }
+  tempDividerControl.addEventListener("click",toggleTempDivider);
+
   const manageTempBackdrop=document.getElementById("manage-temp-backdrop");
   const editTempBackdrop=document.getElementById("edit-temp-backdrop");
   const editTempName=document.getElementById("edit-temp-name");
@@ -3623,14 +3766,16 @@
   const gachaStatus=document.getElementById("gacha-status");
   const gachaSingleBtn=document.getElementById("gacha-single-btn");
   const gachaTenBtn=document.getElementById("gacha-ten-btn");
+  const GACHA_SINGLE_COST=2;
+  const GACHA_TEN_COST=15;
   let gachaDrawing=false;
 
   function updateGachaControls(){
     const balance=pointsBalance();
     document.getElementById("gacha-points").textContent=balance;
     els.pointsTotal.textContent=balance;
-    gachaSingleBtn.disabled=gachaDrawing||balance<3;
-    gachaTenBtn.disabled=gachaDrawing||balance<30;
+    gachaSingleBtn.disabled=gachaDrawing||balance<GACHA_SINGLE_COST;
+    gachaTenBtn.disabled=gachaDrawing||balance<GACHA_TEN_COST;
   }
   document.getElementById("gacha-open-btn").addEventListener("click",()=>{
     gachaResults.innerHTML="";
@@ -3663,8 +3808,8 @@
       renderSelectedPet();
     },count===1?720:950);
   }
-  gachaSingleBtn.addEventListener("click",()=>runFoodGacha(1,3));
-  gachaTenBtn.addEventListener("click",()=>runFoodGacha(10,30));
+  gachaSingleBtn.addEventListener("click",()=>runFoodGacha(1,GACHA_SINGLE_COST));
+  gachaTenBtn.addEventListener("click",()=>runFoodGacha(10,GACHA_TEN_COST));
 
   /* ---------------- reminders ---------------- */
   const bellBtn=document.getElementById("bell-btn");
