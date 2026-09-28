@@ -428,10 +428,29 @@
   .journal-overview-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
   .journal-overview-head .sheet-title{margin-bottom:3px;}
   .journal-overview-sub{color:var(--ink-3);font-size:12px;font-weight:700;}
+  .journal-overview-actions{display:flex;align-items:center;gap:7px;position:relative;flex:none;}
   .journal-sort-btn{
     border:1.5px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;
     padding:8px 11px;font-family:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;
   }
+  .journal-export-btn{
+    width:34px;height:34px;border:1.5px solid var(--line);border-radius:50%;background:var(--surface);color:var(--accent);
+    display:grid;place-items:center;padding:0;cursor:pointer;flex:none;
+  }
+  .journal-export-btn svg{width:17px;height:17px;}
+  .journal-sort-btn:hover,.journal-export-btn:hover{background:var(--surface-soft);}
+  .journal-sort-btn:focus-visible,.journal-export-btn:focus-visible,.journal-export-option:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .journal-export-menu{
+    position:absolute;right:0;top:calc(100% + 8px);z-index:4;width:164px;padding:7px;
+    background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);
+  }
+  .journal-export-menu[hidden]{display:none;}
+  .journal-export-option{
+    width:100%;border:0;border-radius:10px;background:transparent;color:var(--ink);padding:9px 10px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;font-family:inherit;font-size:12.5px;font-weight:800;text-align:left;cursor:pointer;
+  }
+  .journal-export-option:hover{background:var(--surface-soft);}
+  .journal-export-option small{color:var(--ink-3);font-size:10.5px;font-weight:800;}
   .journal-overview-list{display:flex;flex-direction:column;gap:12px;}
   .journal-entry-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow-sm);}
   .journal-entry-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
@@ -439,6 +458,18 @@
   .journal-entry-tasks{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
   .journal-entry-text{background:var(--surface-soft);border-radius:13px;padding:11px 12px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;line-height:1.7;font-weight:650;}
   .journal-entry-empty{color:var(--ink-3);font-size:12.5px;font-weight:700;padding:4px 1px;}
+  .journal-print-root{display:none;}
+  @media print{
+    html,body{height:auto!important;overflow:visible!important;position:static!important;background:#fff!important;}
+    body>*:not(.journal-print-root){display:none!important;}
+    .journal-print-root{display:block!important;color:#302d28;font-family:'PingFang SC','Microsoft YaHei',sans-serif;padding:8mm 10mm;}
+    .journal-print-root h1{font-size:22px;margin:0 0 5px;}
+    .journal-print-root .print-meta{color:#777;font-size:11px;margin-bottom:22px;}
+    .journal-print-root article{break-inside:avoid;border-bottom:1px solid #ddd;padding:0 0 16px;margin:0 0 18px;}
+    .journal-print-root h2{font-size:15px;margin:0 0 8px;}
+    .journal-print-root .print-tasks{font-size:11px;color:#536044;margin-bottom:8px;}
+    .journal-print-root .print-text{font-size:12px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere;}
+  }
 
   /* ---------- modal / sheet ---------- */
   .backdrop{
@@ -939,7 +970,18 @@
         <h3 class="sheet-title">日记总览</h3>
         <div class="journal-overview-sub">按日期回看完成事项与当天记录</div>
       </div>
-      <button class="journal-sort-btn" id="journal-sort-btn" type="button">从旧到新</button>
+      <div class="journal-overview-actions">
+        <button class="journal-sort-btn" id="journal-sort-btn" type="button">从旧到新</button>
+        <button class="journal-export-btn" id="journal-export-btn" type="button" aria-label="导出日记" title="导出日记" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 20h14"/></svg>
+        </button>
+        <div class="journal-export-menu" id="journal-export-menu" role="menu" aria-label="选择导出格式" hidden>
+          <button class="journal-export-option" type="button" role="menuitem" data-journal-export="doc"><span>Word 文档</span><small>.doc</small></button>
+          <button class="journal-export-option" type="button" role="menuitem" data-journal-export="pdf"><span>PDF 文档</span><small>.pdf</small></button>
+          <button class="journal-export-option" type="button" role="menuitem" data-journal-export="excel"><span>Excel 表格</span><small>.xls</small></button>
+          <button class="journal-export-option" type="button" role="menuitem" data-journal-export="csv"><span>CSV 数据</span><small>.csv</small></button>
+        </div>
+      </div>
     </div>
     <div class="journal-overview-list" id="journal-overview-list"></div>
     <button class="btn btn-ghost" id="journal-overview-close" type="button">关闭</button>
@@ -1999,6 +2041,8 @@
 
   const journalOverviewBackdrop=document.getElementById("journal-overview-backdrop");
   const journalOverviewList=document.getElementById("journal-overview-list");
+  const journalExportBtn=document.getElementById("journal-export-btn");
+  const journalExportMenu=document.getElementById("journal-export-menu");
   let journalSortAscending=true;
   function journalDates(){
     return Object.keys(state.days).filter(date=>{
@@ -2023,7 +2067,83 @@
         '</article>';
     }).join("");
   }
+  function journalExportEntries(){
+    return journalDates().map(date=>({
+      date,
+      dateLabel:fmtFullDate(date),
+      tasks:completedItemsForDate(date),
+      journal:(state.days[date].journal||"").trim()
+    }));
+  }
+  function closeJournalExportMenu(){
+    journalExportMenu.hidden=true;
+    journalExportBtn.setAttribute("aria-expanded","false");
+  }
+  function journalExportStamp(){
+    const now=new Date();
+    return now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+  }
+  function downloadJournalFile(content,mime,extension){
+    const blob=new Blob(["\ufeff",content],{type:mime});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download="每日List_日记_"+journalExportStamp()+"."+extension;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  function journalDocumentBody(entries){
+    return entries.map(entry=>
+      '<section class="entry"><h2>'+escapeHtml(entry.dateLabel)+'</h2>'+
+      (entry.tasks.length?'<p class="tasks">完成事项：'+escapeHtml(entry.tasks.join("、"))+'</p>':'')+
+      '<div class="text">'+(entry.journal?escapeHtml(entry.journal).replace(/\n/g,"<br>"):"（未填写日记）")+'</div></section>'
+    ).join("");
+  }
+  function exportJournalDoc(entries){
+    const html='<!doctype html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><title>每日List 日记</title><style>body{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#302d28;line-height:1.7;margin:36px}h1{font-size:24px;margin:0 0 24px}.entry{border-bottom:1px solid #ddd;padding-bottom:16px;margin-bottom:18px}h2{font-size:16px;margin:0 0 8px}.tasks{font-size:12px;color:#536044;margin:0 0 8px}.text{font-size:13px}</style></head><body><h1>每日List · 日记</h1>'+journalDocumentBody(entries)+'</body></html>';
+    downloadJournalFile(html,"application/msword;charset=utf-8","doc");
+  }
+  function exportJournalExcel(entries){
+    const rows=entries.map(entry=>'<tr><td>'+escapeHtml(entry.dateLabel)+'</td><td>'+escapeHtml(entry.tasks.join("、"))+'</td><td>'+escapeHtml(entry.journal).replace(/\n/g,"<br>")+'</td></tr>').join("");
+    const html='<!doctype html><html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="utf-8"><title>每日List 日记</title></head><body><table border="1"><thead><tr><th>日期</th><th>完成事项</th><th>日记</th></tr></thead><tbody>'+rows+'</tbody></table></body></html>';
+    downloadJournalFile(html,"application/vnd.ms-excel;charset=utf-8","xls");
+  }
+  function csvField(value){return '"'+String(value).replace(/"/g,'""')+'"';}
+  function exportJournalCsv(entries){
+    const rows=[["日期","完成事项","日记"],...entries.map(entry=>[entry.dateLabel,entry.tasks.join("、"),entry.journal])];
+    downloadJournalFile(rows.map(row=>row.map(csvField).join(",")).join("\r\n"),"text/csv;charset=utf-8","csv");
+  }
+  function exportJournalPdf(entries){
+    const oldRoot=document.getElementById("journal-print-root");
+    if(oldRoot) oldRoot.remove();
+    const root=document.createElement("section");
+    root.id="journal-print-root";
+    root.className="journal-print-root";
+    root.setAttribute("aria-hidden","true");
+    root.innerHTML='<h1>每日List · 日记</h1><div class="print-meta">导出日期：'+journalExportStamp()+'</div>'+entries.map(entry=>
+      '<article><h2>'+escapeHtml(entry.dateLabel)+'</h2>'+
+      (entry.tasks.length?'<div class="print-tasks">完成事项：'+escapeHtml(entry.tasks.join("、"))+'</div>':'')+
+      '<div class="print-text">'+(entry.journal?escapeHtml(entry.journal):"（未填写日记）")+'</div></article>'
+    ).join("");
+    document.body.appendChild(root);
+    window.addEventListener("afterprint",()=>root.remove(),{once:true});
+    toast("请在打印界面选择“存储为 PDF”");
+    window.print();
+  }
+  function exportJournal(format){
+    const entries=journalExportEntries();
+    closeJournalExportMenu();
+    if(entries.length===0){toast("还没有可导出的日记记录");return;}
+    if(format==="doc") exportJournalDoc(entries);
+    else if(format==="pdf") exportJournalPdf(entries);
+    else if(format==="excel") exportJournalExcel(entries);
+    else if(format==="csv") exportJournalCsv(entries);
+    if(format!=="pdf") toast("日记已导出");
+  }
   function openJournalOverview(){
+    closeJournalExportMenu();
     renderJournalOverview();
     openBackdrop("journal-overview-backdrop");
   }
@@ -2031,13 +2151,30 @@
     journalSortAscending=!journalSortAscending;
     renderJournalOverview();
   });
+  journalExportBtn.addEventListener("click",(e)=>{
+    e.stopPropagation();
+    const opening=journalExportMenu.hidden;
+    journalExportMenu.hidden=!opening;
+    journalExportBtn.setAttribute("aria-expanded",opening?"true":"false");
+    if(opening) journalExportMenu.querySelector(".journal-export-option").focus();
+  });
+  journalExportMenu.addEventListener("click",e=>{
+    const option=e.target.closest("[data-journal-export]");
+    if(option) exportJournal(option.dataset.journalExport);
+  });
+  document.addEventListener("click",e=>{
+    if(!journalExportMenu.hidden&&!e.target.closest(".journal-overview-actions")) closeJournalExportMenu();
+  });
+  document.addEventListener("keydown",e=>{
+    if(e.key==="Escape"&&!journalExportMenu.hidden){closeJournalExportMenu();journalExportBtn.focus();}
+  });
   journalOverviewList.addEventListener("click",(e)=>{
     const btn=e.target.closest("[data-journal-date]");
     if(btn) goToJournalDate(btn.dataset.journalDate);
   });
-  document.getElementById("journal-overview-close").addEventListener("click",()=>closeBackdrop("journal-overview-backdrop"));
+  document.getElementById("journal-overview-close").addEventListener("click",()=>{closeJournalExportMenu();closeBackdrop("journal-overview-backdrop");});
   journalOverviewBackdrop.addEventListener("click",(e)=>{
-    if(e.target===journalOverviewBackdrop) closeBackdrop("journal-overview-backdrop");
+    if(e.target===journalOverviewBackdrop){closeJournalExportMenu();closeBackdrop("journal-overview-backdrop");}
   });
 
   function goToJournalDate(dateStr){
@@ -3786,6 +3923,17 @@
   document.getElementById("gacha-close-btn").addEventListener("click",()=>closeBackdrop("gacha-backdrop"));
   gachaBackdrop.addEventListener("click",e=>{if(e.target===gachaBackdrop) closeBackdrop("gacha-backdrop");});
 
+  function equalChanceFood(){
+    const count=FOODS.length;
+    if(window.crypto&&window.crypto.getRandomValues){
+      const value=new Uint32Array(1);
+      const limit=Math.floor(0x100000000/count)*count;
+      do{window.crypto.getRandomValues(value);}while(value[0]>=limit);
+      return FOODS[value[0]%count];
+    }
+    return FOODS[Math.floor(Math.random()*count)];
+  }
+
   function runFoodGacha(count,cost){
     if(gachaDrawing) return;
     if(!spendPoints(cost)){toast("积分不够啦，再完成几件任务吧");updateGachaControls();return;}
@@ -3796,7 +3944,7 @@
     gachaMachine.classList.add("is-drawing");
     updateGachaControls();
     setTimeout(()=>{
-      const rewards=Array.from({length:count},()=>FOODS[Math.floor(Math.random()*FOODS.length)]);
+      const rewards=Array.from({length:count},equalChanceFood);
       rewards.forEach(food=>{state.zooInventory[food.id]=(state.zooInventory[food.id]||0)+1;});
       saveState();
       gachaMachine.classList.remove("is-drawing");
