@@ -675,6 +675,17 @@
   .gacha-entry-icon{position:relative;width:17px;height:16px;flex:none;}
   .gacha-entry-icon::before{content:"";position:absolute;left:2px;top:3px;width:11px;height:12px;border:1.5px solid currentColor;border-radius:3px;background:var(--surface);transform:rotate(-7deg);}
   .gacha-entry-icon::after{content:"";position:absolute;left:6px;top:1px;width:10px;height:12px;border:1.5px solid currentColor;border-radius:3px;background:var(--teal-tint);transform:rotate(7deg);}
+  .backpack-entry{
+    position:relative;width:36px;height:36px;border:0;border-radius:50%;background:var(--amber-tint);color:var(--amber);
+    display:grid;place-items:center;padding:0;cursor:pointer;flex:none;
+  }
+  .backpack-entry:hover{filter:brightness(.97);}
+  .backpack-entry svg{width:18px;height:18px;}
+  .backpack-count{
+    position:absolute;right:-4px;top:-5px;min-width:17px;height:17px;border-radius:999px;padding:0 4px;
+    display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);font-size:9px;font-weight:900;
+    box-shadow:0 3px 8px -4px rgba(74,68,59,.55);font-variant-numeric:tabular-nums;
+  }
   .zoo-habitat{
     position:relative;height:430px;border-radius:0;overflow:hidden;touch-action:none;
     background:var(--bg);box-shadow:none;
@@ -749,6 +760,39 @@
   .food-opt .f-owned{font-size:11px;color:var(--ink-2);font-weight:800;}
   .feed-hint{font-size:12px;line-height:1.5;color:var(--ink-2);font-weight:700;text-align:center;margin:-6px 0 14px;}
 
+  .backpack-sheet .sheet-title,.food-choice-sheet .sheet-title{margin-bottom:4px;}
+  .backpack-summary,.food-choice-desc{color:var(--ink-2);font-size:12.5px;font-weight:700;line-height:1.5;margin:0 0 14px;}
+  .backpack-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;}
+  .backpack-food{
+    min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px;
+    display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;align-items:center;
+  }
+  .backpack-food.is-selected{background:var(--accent-tint);border-color:var(--accent);}
+  .backpack-food canvas{width:34px;height:34px;image-rendering:pixelated;grid-row:1/3;}
+  .backpack-food-name{font-size:12px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .backpack-food-owned{font-size:10.5px;color:var(--ink-2);font-weight:800;font-variant-numeric:tabular-nums;}
+  .backpack-stepper{grid-column:1/-1;display:grid;grid-template-columns:30px 1fr 30px;gap:5px;align-items:center;margin-top:2px;}
+  .backpack-stepper button{
+    width:30px;height:28px;border:0;border-radius:9px;background:var(--surface-soft);color:var(--ink-2);display:grid;place-items:center;cursor:pointer;
+  }
+  .backpack-stepper button:disabled{opacity:.32;cursor:not-allowed;}
+  .backpack-stepper button svg{width:14px;height:14px;}
+  .backpack-picked{text-align:center;color:var(--accent);font-size:11px;font-weight:900;font-variant-numeric:tabular-nums;}
+  .backpack-exchange-bar{
+    position:sticky;bottom:-1px;background:var(--bg);padding-top:6px;display:grid;grid-template-columns:1fr 1.2fr;gap:8px;align-items:center;
+  }
+  .backpack-selection-text{font-size:12px;color:var(--ink-2);font-weight:800;text-align:center;}
+  .backpack-exchange-btn{margin-top:0!important;padding:12px 8px;font-size:13px;}
+  .backpack-empty{grid-column:1/-1;text-align:center;color:var(--ink-3);font-size:12.5px;font-weight:700;padding:24px 8px;}
+  .food-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:8px;}
+  .food-choice-option{
+    border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:14px;padding:11px 8px;
+    display:flex;align-items:center;gap:8px;font-family:inherit;text-align:left;cursor:pointer;
+  }
+  .food-choice-option:hover{background:var(--surface-soft);}
+  .food-choice-option canvas{width:34px;height:34px;image-rendering:pixelated;flex:none;}
+  .food-choice-option span{font-size:12px;font-weight:900;line-height:1.25;}
+
   .gacha-sheet{text-align:center;}
   .gacha-sheet .sheet-title{margin-bottom:4px;}
   .gacha-desc{color:var(--ink-2);font-size:12.5px;font-weight:700;line-height:1.5;margin:0 0 12px;}
@@ -775,9 +819,19 @@
   .gacha-draw-btn.primary{background:var(--accent);color:var(--accent-ink);box-shadow:none;}
   .gacha-draw-btn small{display:block;font-size:10px;opacity:.75;margin-top:2px;}
   .gacha-draw-btn:disabled{opacity:.45;cursor:not-allowed;}
+  .gacha-pity{
+    display:flex;align-items:center;justify-content:space-between;gap:9px;background:var(--surface-soft);
+    border-radius:13px;padding:8px 9px;margin:10px 0 4px;text-align:left;
+  }
+  .gacha-pity-text{font-size:10.5px;color:var(--ink-2);font-weight:800;line-height:1.35;}
+  .gacha-choice-btn{
+    border:0;border-radius:999px;background:var(--amber-tint);color:var(--amber);padding:7px 10px;
+    font-family:inherit;font-size:10.5px;font-weight:900;white-space:nowrap;cursor:pointer;
+  }
+  .gacha-choice-btn:disabled{opacity:.42;cursor:not-allowed;}
 
   @media (max-width:420px){
-    .garden-head{align-items:flex-start;}.garden-actions{flex-direction:column;gap:5px;}.btn-adopt{padding:8px 11px;}.gacha-entry{padding:8px 10px;justify-content:center;}
+    .garden-head{align-items:flex-start;}.garden-actions{display:grid;grid-template-columns:36px auto;gap:5px;}.garden-actions .btn-adopt{grid-column:1/-1;padding:8px 11px;}.gacha-entry{padding:8px 10px;justify-content:center;}
     .zoo-habitat{height:400px;}.zoo-meter-row{grid-template-columns:1fr;gap:8px;}.species-grid{grid-template-columns:repeat(3,1fr);}
   }
 
@@ -922,6 +976,10 @@
         <div class="garden-sub">轻点互动，长按可以拎起小动物</div>
       </div>
       <div class="garden-actions">
+        <button class="backpack-entry" id="backpack-open-btn" type="button" aria-label="打开食物背包" title="食物背包">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 7V5a4 4 0 0 1 8 0v2"/><path d="M5 7h14l1 14H4L5 7Z"/><path d="M9 11v2a3 3 0 0 0 6 0v-2"/></svg>
+          <span class="backpack-count" id="backpack-count">0</span>
+        </button>
         <button class="gacha-entry" id="gacha-open-btn" type="button" aria-label="打开抽卡">
           <span class="gacha-entry-icon" aria-hidden="true"></span>
           <span>抽卡</span>
@@ -1263,12 +1321,27 @@
   </div>
 </div>
 
+<!-- food backpack sheet -->
+<div class="backdrop" id="backpack-backdrop">
+  <div class="sheet backpack-sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title">食物背包</h3>
+    <p class="backpack-summary">共有 <span id="backpack-total">0</span> 份食物；选两份不想要的，可以换一份自选食物</p>
+    <div class="backpack-grid" id="backpack-grid"></div>
+    <div class="backpack-exchange-bar">
+      <div class="backpack-selection-text" id="backpack-selection-text">已选择 0 / 2</div>
+      <button class="btn btn-primary backpack-exchange-btn" id="backpack-exchange-btn" type="button" disabled>换一份自选食物</button>
+    </div>
+    <button class="btn btn-ghost" id="backpack-close-btn" type="button">关闭</button>
+  </div>
+</div>
+
 <!-- points gacha sheet -->
 <div class="backdrop" id="gacha-backdrop">
   <div class="sheet gacha-sheet">
     <div class="sheet-grip"></div>
     <h3 class="sheet-title">幸运食盒</h3>
-    <p class="gacha-desc">10 种食物随机掉落，抽到后会自动放进背包</p>
+    <p class="gacha-desc">按可领养动物种类加权掉落；每累计 3 抽可自选 1 份食物</p>
     <div class="gacha-balance">✦ 当前积分 <span id="gacha-points">0</span></div>
     <div class="gacha-machine" id="gacha-machine" aria-hidden="true">
       <div class="gacha-card-back"></div>
@@ -1280,7 +1353,22 @@
       <button class="gacha-draw-btn" id="gacha-single-btn" type="button">抽 1 次<small>消耗 2 积分</small></button>
       <button class="gacha-draw-btn primary" id="gacha-ten-btn" type="button">抽 10 次<small>消耗 15 积分</small></button>
     </div>
+    <div class="gacha-pity">
+      <div class="gacha-pity-text" id="gacha-pity-text">再抽 3 次可获得保底自选</div>
+      <button class="gacha-choice-btn" id="gacha-choice-btn" type="button" disabled>保底自选 0</button>
+    </div>
     <button class="btn btn-ghost" id="gacha-close-btn" type="button">关闭</button>
+  </div>
+</div>
+
+<!-- food choice sheet -->
+<div class="backdrop" id="food-choice-backdrop">
+  <div class="sheet food-choice-sheet">
+    <div class="sheet-grip"></div>
+    <h3 class="sheet-title" id="food-choice-title">自选食物</h3>
+    <p class="food-choice-desc" id="food-choice-desc">选择一份想要的食物</p>
+    <div class="food-choice-grid" id="food-choice-grid"></div>
+    <button class="btn btn-ghost" id="food-choice-close-btn" type="button">取消</button>
   </div>
 </div>
 
@@ -1372,7 +1460,7 @@
   let state=loadState();
 
   function defaultState(){
-    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0,twig:0,meal:0}, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"}, tempDividerAfterId:null };
+    return { recurring:[], days:{}, pointsSpent:0, pets:[], zooInventory:{apple:1,catstick:0,dogfood:0,feast:0,turtlecalcium:0,bamboo:0,birdseed:0,bone:0,twig:0,meal:0}, gachaPityProgress:0, foodChoiceCredits:0, recycledPets:[], notificationsEnabled:false, scheduleRange:"week", sortMode:{recurring:"custom",temp:"custom",schedule:"time"}, tempDividerAfterId:null };
   }
   function migrateItem(it){
     if(it.priority==null) it.priority=3;
@@ -1393,6 +1481,10 @@
       if(typeof parsed.zooInventory.feast!=="number") parsed.zooInventory.feast=(parsed.zooInventory.cake||0);
       if(typeof parsed.zooInventory.apple!=="number") parsed.zooInventory.apple=1+(parsed.zooInventory.salad||0);
       ["catstick","dogfood","turtlecalcium","bamboo","birdseed","bone","twig","meal"].forEach(id=>{ if(typeof parsed.zooInventory[id]!=="number") parsed.zooInventory[id]=0; });
+      if(typeof parsed.gachaPityProgress!=="number") parsed.gachaPityProgress=0;
+      parsed.gachaPityProgress=Math.max(0,Math.floor(parsed.gachaPityProgress))%3;
+      if(typeof parsed.foodChoiceCredits!=="number") parsed.foodChoiceCredits=0;
+      parsed.foodChoiceCredits=Math.max(0,Math.floor(parsed.foodChoiceCredits));
       if(!Array.isArray(parsed.recycledPets)) parsed.recycledPets=[];
       const oldSpecies={chick:"bird",cat:"britcat",rabbit:"panda",fox:"shiba",dog:"corgi"};
       parsed.pets.forEach((pet,index)=>{
@@ -3714,6 +3806,7 @@
 
   function renderGarden(){
     els.pointsTotal.textContent=pointsBalance();
+    renderBackpackBadge();
     applyPetDecay();
     const grid=document.getElementById("pet-grid");
     if(state.pets.length===0){
@@ -3813,7 +3906,7 @@
     const pet=state.pets.find(p=>p.id===petId),food=FOODS.find(f=>f.id===foodId);if(!pet||!food) return;
     if(!canPetEatFood(pet,food)){toast("这份食物不适合"+(SPECIES.find(s=>s.id===pet.species)||SPECIES[0]).name);return;}
     if((state.zooInventory[food.id]||0)<1){toast("背包里没有这种食物啦");return;}
-    state.zooInventory[food.id]-=1;pet.satiety=clampPetValue(pet.satiety+food.satiety);pet.mood=clampPetValue(pet.mood+food.mood);pet.criticalSince=null;pet.lastUpdatedAt=Date.now();saveState();
+    state.zooInventory[food.id]-=1;pet.satiety=clampPetValue(pet.satiety+food.satiety);pet.mood=clampPetValue(pet.mood+food.mood);pet.criticalSince=null;pet.lastUpdatedAt=Date.now();saveState();renderBackpackBadge();
     const btn=document.querySelector('.zoo-pet[data-id="'+pet.id+'"]');
     if(btn){btn.classList.add("is-eating","show-mood");btn.querySelector(".zoo-pet-mood").textContent="好吃";drawPetSprite(btn.querySelector("canvas"),pet.species,"happy");setTimeout(()=>{btn.classList.remove("is-eating","show-mood");drawPetSprite(btn.querySelector("canvas"),pet.species,"neutral");},1300);}
     toast("饱腹 +"+food.satiety+"，心情 +"+food.mood);renderSelectedPet();
@@ -3896,6 +3989,110 @@
   document.getElementById("feed-close-btn").addEventListener("click",()=>closeBackdrop("feed-backdrop"));
   feedBackdrop.addEventListener("click",(e)=>{ if(e.target===feedBackdrop) closeBackdrop("feed-backdrop"); });
 
+  /* food backpack + self-select */
+  const backpackBackdrop=document.getElementById("backpack-backdrop");
+  const backpackGrid=document.getElementById("backpack-grid");
+  const backpackExchangeBtn=document.getElementById("backpack-exchange-btn");
+  const foodChoiceBackdrop=document.getElementById("food-choice-backdrop");
+  const foodChoiceGrid=document.getElementById("food-choice-grid");
+  let backpackSelection=[];
+  let foodChoiceMode=null;
+
+  function inventoryTotal(){
+    return FOODS.reduce((sum,food)=>sum+Math.max(0,state.zooInventory[food.id]||0),0);
+  }
+  function renderBackpackBadge(){
+    const total=inventoryTotal();
+    const badge=document.getElementById("backpack-count");
+    badge.textContent=total>99?"99+":String(total);
+    badge.hidden=total===0;
+  }
+  function selectedFoodCount(foodId){
+    return backpackSelection.filter(id=>id===foodId).length;
+  }
+  function renderBackpack(){
+    const total=inventoryTotal();
+    document.getElementById("backpack-total").textContent=total;
+    backpackGrid.innerHTML=FOODS.map(food=>{
+      const owned=Math.max(0,state.zooInventory[food.id]||0);
+      const picked=selectedFoodCount(food.id);
+      const addDisabled=owned<=picked||backpackSelection.length>=2;
+      return `<div class="backpack-food${picked?" is-selected":""}">
+        <canvas data-food="${food.id}"></canvas>
+        <div><div class="backpack-food-name">${food.name}</div><div class="backpack-food-owned">库存 ${owned}</div></div>
+        <div class="backpack-stepper">
+          <button type="button" data-backpack-remove="${food.id}" aria-label="减少一份${food.name}" ${picked<1?"disabled":""}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 8h10"/></svg></button>
+          <span class="backpack-picked">已选 ${picked}</span>
+          <button type="button" data-backpack-add="${food.id}" aria-label="选择一份${food.name}" ${addDisabled?"disabled":""}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M8 3v10M3 8h10"/></svg></button>
+        </div>
+      </div>`;
+    }).join("");
+    if(total===0) backpackGrid.insertAdjacentHTML("afterbegin",'<div class="backpack-empty">背包还是空的，去抽卡获得食物吧。</div>');
+    drawFoodIcons(backpackGrid);
+    document.getElementById("backpack-selection-text").textContent="已选择 "+backpackSelection.length+" / 2";
+    backpackExchangeBtn.disabled=backpackSelection.length!==2;
+    backpackGrid.querySelectorAll("[data-backpack-add]").forEach(btn=>btn.addEventListener("click",()=>{
+      const id=btn.dataset.backpackAdd;
+      if(backpackSelection.length<2&&selectedFoodCount(id)<(state.zooInventory[id]||0)){backpackSelection.push(id);renderBackpack();}
+    }));
+    backpackGrid.querySelectorAll("[data-backpack-remove]").forEach(btn=>btn.addEventListener("click",()=>{
+      const index=backpackSelection.lastIndexOf(btn.dataset.backpackRemove);
+      if(index>=0){backpackSelection.splice(index,1);renderBackpack();}
+    }));
+  }
+  document.getElementById("backpack-open-btn").addEventListener("click",()=>{
+    backpackSelection=[];
+    renderBackpack();
+    openBackdrop("backpack-backdrop");
+  });
+  document.getElementById("backpack-close-btn").addEventListener("click",()=>closeBackdrop("backpack-backdrop"));
+  backpackBackdrop.addEventListener("click",e=>{if(e.target===backpackBackdrop) closeBackdrop("backpack-backdrop");});
+
+  function openFoodChoice(mode){
+    if(mode==="pity"&&(state.foodChoiceCredits||0)<1) return;
+    if(mode==="exchange"&&backpackSelection.length!==2) return;
+    foodChoiceMode=mode;
+    document.getElementById("food-choice-title").textContent=mode==="pity"?"保底自选":"交换食物";
+    document.getElementById("food-choice-desc").textContent=mode==="pity"?"使用 1 次保底机会，任选一份食物":"用刚才选择的两份食物，换取下面任意一份";
+    foodChoiceGrid.innerHTML=FOODS.map(food=>`<button class="food-choice-option" type="button" data-food-choice="${food.id}"><canvas data-food="${food.id}"></canvas><span>${food.name}</span></button>`).join("");
+    drawFoodIcons(foodChoiceGrid);
+    openBackdrop("food-choice-backdrop");
+  }
+  function completeFoodChoice(foodId){
+    const food=FOODS.find(item=>item.id===foodId);
+    if(!food||!foodChoiceMode) return;
+    const mode=foodChoiceMode;
+    if(mode==="pity"){
+      if((state.foodChoiceCredits||0)<1){toast("还没有可用的保底自选");foodChoiceMode=null;closeBackdrop("food-choice-backdrop");return;}
+      state.foodChoiceCredits-=1;
+    }else{
+      if(backpackSelection.length!==2){toast("请先选择两份食物");foodChoiceMode=null;closeBackdrop("food-choice-backdrop");return;}
+      const needed={};
+      backpackSelection.forEach(id=>{needed[id]=(needed[id]||0)+1;});
+      if(Object.keys(needed).some(id=>(state.zooInventory[id]||0)<needed[id])){
+        toast("背包数量发生变化，请重新选择");backpackSelection=[];foodChoiceMode=null;closeBackdrop("food-choice-backdrop");renderBackpack();return;
+      }
+      Object.keys(needed).forEach(id=>{state.zooInventory[id]-=needed[id];});
+      backpackSelection=[];
+    }
+    state.zooInventory[food.id]=(state.zooInventory[food.id]||0)+1;
+    saveState();
+    foodChoiceMode=null;
+    closeBackdrop("food-choice-backdrop");
+    renderBackpackBadge();
+    renderBackpack();
+    updateGachaControls();
+    renderSelectedPet();
+    toast(mode==="pity"?"已领取一份"+food.name:"交换成功，获得一份"+food.name);
+  }
+  foodChoiceGrid.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-food-choice]");
+    if(btn) completeFoodChoice(btn.dataset.foodChoice);
+  });
+  backpackExchangeBtn.addEventListener("click",()=>openFoodChoice("exchange"));
+  document.getElementById("food-choice-close-btn").addEventListener("click",()=>{foodChoiceMode=null;closeBackdrop("food-choice-backdrop");});
+  foodChoiceBackdrop.addEventListener("click",e=>{if(e.target===foodChoiceBackdrop){foodChoiceMode=null;closeBackdrop("food-choice-backdrop");}});
+
   /* points gacha */
   const gachaBackdrop=document.getElementById("gacha-backdrop");
   const gachaMachine=document.getElementById("gacha-machine");
@@ -3903,8 +4100,10 @@
   const gachaStatus=document.getElementById("gacha-status");
   const gachaSingleBtn=document.getElementById("gacha-single-btn");
   const gachaTenBtn=document.getElementById("gacha-ten-btn");
+  const gachaChoiceBtn=document.getElementById("gacha-choice-btn");
   const GACHA_SINGLE_COST=2;
   const GACHA_TEN_COST=15;
+  const UNIVERSAL_FOOD_POOL_WEIGHT=.5;
   let gachaDrawing=false;
 
   function updateGachaControls(){
@@ -3913,6 +4112,11 @@
     els.pointsTotal.textContent=balance;
     gachaSingleBtn.disabled=gachaDrawing||balance<GACHA_SINGLE_COST;
     gachaTenBtn.disabled=gachaDrawing||balance<GACHA_TEN_COST;
+    const credits=state.foodChoiceCredits||0;
+    const remaining=3-(state.gachaPityProgress||0);
+    document.getElementById("gacha-pity-text").textContent=credits>0?"已有 "+credits+" 次自选；再抽 "+remaining+" 次获得下一次":"再抽 "+remaining+" 次可获得保底自选";
+    gachaChoiceBtn.textContent="保底自选 "+credits;
+    gachaChoiceBtn.disabled=gachaDrawing||credits<1;
   }
   document.getElementById("gacha-open-btn").addEventListener("click",()=>{
     gachaResults.innerHTML="";
@@ -3922,16 +4126,46 @@
   });
   document.getElementById("gacha-close-btn").addEventListener("click",()=>closeBackdrop("gacha-backdrop"));
   gachaBackdrop.addEventListener("click",e=>{if(e.target===gachaBackdrop) closeBackdrop("gacha-backdrop");});
+  gachaChoiceBtn.addEventListener("click",()=>openFoodChoice("pity"));
 
-  function equalChanceFood(){
-    const count=FOODS.length;
+  function secureRandomUnit(){
     if(window.crypto&&window.crypto.getRandomValues){
       const value=new Uint32Array(1);
-      const limit=Math.floor(0x100000000/count)*count;
-      do{window.crypto.getRandomValues(value);}while(value[0]>=limit);
-      return FOODS[value[0]%count];
+      window.crypto.getRandomValues(value);
+      return value[0]/0x100000000;
     }
-    return FOODS[Math.floor(Math.random()*count)];
+    return Math.random();
+  }
+  function weightedFoodOptions(){
+    const groups=new Map();
+    const universal=[];
+    FOODS.forEach(food=>{
+      if(food.targets==="all"){universal.push(food);return;}
+      const targets=food.targets.filter(id=>SPECIES.some(species=>species.id===id)).sort();
+      const key=targets.join("|");
+      if(!groups.has(key)) groups.set(key,{targets,foods:[]});
+      groups.get(key).foods.push(food);
+    });
+    const options=[];
+    groups.forEach(group=>{
+      const foodWeight=group.targets.length/group.foods.length;
+      group.foods.forEach(food=>options.push({food,weight:foodWeight}));
+    });
+    if(universal.length){
+      const foodWeight=UNIVERSAL_FOOD_POOL_WEIGHT/universal.length;
+      universal.forEach(food=>options.push({food,weight:foodWeight}));
+    }
+    return options;
+  }
+  function weightedFoodBySpecies(){
+    const options=weightedFoodOptions();
+    const total=options.reduce((sum,option)=>sum+option.weight,0);
+    let draw=secureRandomUnit()*total;
+    for(const option of options){
+      draw-=option.weight;
+      if(draw<0) return option.food;
+    }
+    return options[options.length-1].food;
   }
 
   function runFoodGacha(count,cost){
@@ -3944,15 +4178,20 @@
     gachaMachine.classList.add("is-drawing");
     updateGachaControls();
     setTimeout(()=>{
-      const rewards=Array.from({length:count},equalChanceFood);
+      const rewards=Array.from({length:count},weightedFoodBySpecies);
       rewards.forEach(food=>{state.zooInventory[food.id]=(state.zooInventory[food.id]||0)+1;});
+      const pityTotal=(state.gachaPityProgress||0)+count;
+      const earnedChoices=Math.floor(pityTotal/3);
+      state.gachaPityProgress=pityTotal%3;
+      state.foodChoiceCredits=(state.foodChoiceCredits||0)+earnedChoices;
       saveState();
       gachaMachine.classList.remove("is-drawing");
       gachaResults.innerHTML=rewards.map((food,index)=>`<div class="gacha-result" style="animation-delay:${index*55}ms"><canvas data-food="${food.id}"></canvas><span>${food.name}</span></div>`).join("");
       drawFoodIcons(gachaResults);
-      gachaStatus.textContent=count===1?"抽到一份 "+rewards[0].name+"！":"十份食物已全部放进背包！";
+      gachaStatus.textContent=(count===1?"抽到一份 "+rewards[0].name+"！":"十份食物已全部放进背包！")+(earnedChoices?" 获得 "+earnedChoices+" 次保底自选。":"");
       gachaDrawing=false;
       updateGachaControls();
+      renderBackpackBadge();
       renderSelectedPet();
     },count===1?720:950);
   }
