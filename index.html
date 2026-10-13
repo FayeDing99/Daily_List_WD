@@ -64,7 +64,7 @@
     "日记总览":"Journal","按日期回看完成事项与当天记录":"Look back at what you did and wrote, day by day",
     "从旧到新":"Oldest first","从新到旧":"Newest first",
     "导出日记":"Export journal","导入日记":"Import journal","选择导出格式":"Choose export format",
-    "Word 文档":"Word document","PDF 文档":"PDF document","Excel 表格":"Excel sheet","CSV 数据":"CSV data","关闭":"Close",
+    "Word 文档":"Word document","完整备份":"Full backup","PDF 文档":"PDF document","Excel 表格":"Excel sheet","CSV 数据":"CSV data","关闭":"Close",
     "正在编辑整组日程；修改循环规则后，该组日期会重新生成。":"Editing the whole series. Changing the repeat rule regenerates its dates.",
     "任务名称":"Task name","比如：喝够2000ml水":"e.g. Drink 2 L of water","比如：整理书桌":"e.g. Tidy up the desk","比如：字节跳动一面":"e.g. First-round interview",
     "日程名称":"Event name","优先级":"Priority","日期":"Date","选择日期":"Pick a date","设置具体时间":"Set a specific time",
@@ -1349,8 +1349,9 @@
         <button class="journal-export-btn" id="journal-import-btn" type="button" aria-label="导入日记" title="导入日记">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 14v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5"/></svg>
         </button>
-        <input class="journal-import-input" id="journal-import-input" type="file" accept=".csv,.xls,.doc,.htm,.html,text/csv,application/vnd.ms-excel,application/msword,text/html">
+        <input class="journal-import-input" id="journal-import-input" type="file" accept=".json,.csv,.xls,.doc,.htm,.html,application/json,text/csv,application/vnd.ms-excel,application/msword,text/html">
         <div class="journal-export-menu" id="journal-export-menu" role="menu" aria-label="选择导出格式" hidden>
+          <button class="journal-export-option" type="button" role="menuitem" data-journal-export="backup"><span>完整备份</span><small>.json</small></button>
           <button class="journal-export-option" type="button" role="menuitem" data-journal-export="doc"><span>Word 文档</span><small>.doc</small></button>
           <button class="journal-export-option" type="button" role="menuitem" data-journal-export="pdf"><span>PDF 文档</span><small>.pdf</small></button>
           <button class="journal-export-option" type="button" role="menuitem" data-journal-export="excel"><span>Excel 表格</span><small>.xls</small></button>
@@ -2729,13 +2730,59 @@
     if(/\.pdf$/i.test(file.name)){ toast(DL.L("PDF 无法导入，请使用导出的 CSV、Excel 或 Word 文件","PDFs can't be imported. Use an exported CSV, Excel or Word file.")); return; }
     const reader=new FileReader();
     reader.onload=()=>{
+      const text=String(reader.result||"").replace(/^\ufeff/,"");
+      if(/\.json$/i.test(file.name)||/^\s*\{/.test(text)){ restoreFullBackup(text); return; }
       try{ importJournalEntries(importJournalText(reader.result)); }
       catch(e){ toast(DL.L("文件无法识别，请选择每日List导出的 CSV、Excel 或 Word 文件","Couldn't read this file. Choose a CSV, Excel or Word file exported from Daily List.")); }
     };
     reader.onerror=()=>toast(DL.L("文件读取失败，请重试","Couldn't open the file. Please try again."));
     reader.readAsText(file,"utf-8");
   });
+  /* 完整备份：浏览器里保存的全部数据（任务、日程、日记、积分、动物园、外观设置），
+     可以导入到微信小程序版「每日List」，也可以再导回网页版。 */
+  function exportFullBackup(){
+    const prefs={theme:"",lang:"",accent:""};
+    try{ prefs.theme=localStorage.getItem(THEME_KEY)||""; prefs.lang=localStorage.getItem(DL.LANG_KEY)||""; prefs.accent=localStorage.getItem(DL.ACCENT_KEY)||""; }catch(e){ /* 使用默认值 */ }
+    const backup={app:"DailyList",type:"full-backup",version:1,exportedAt:new Date().toISOString(),state:state,prefs:prefs};
+    const blob=new Blob([JSON.stringify(backup)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement("a");
+    link.href=url;
+    link.download=DL.L("每日List_完整备份_","DailyList_Backup_")+journalExportStamp()+".json";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast(DL.L("完整备份已导出","Full backup exported"));
+  }
+  function restoreFullBackup(text){
+    let data;
+    try{ data=JSON.parse(text); }catch(e){ toast(DL.L("备份文件已损坏，无法读取","This backup file is damaged and can't be read")); return; }
+    let raw=null, prefs=null;
+    if(data&&data.type==="full-backup"&&data.state){ raw=data.state; prefs=data.prefs||null; }
+    else if(data&&typeof data==="object"&&(data.days||data.recurring)) raw=data;
+    if(!raw||typeof raw!=="object"||Array.isArray(raw)||(raw.days!=null&&(typeof raw.days!=="object"||Array.isArray(raw.days)))){
+      toast(DL.L("这不是每日List的备份文件","This isn't a Daily List backup file")); return;
+    }
+    if(!window.confirm(DL.L("导入完整备份会替换当前所有数据（任务、日程、日记、积分、动物园），确定继续吗？","Importing a full backup replaces all current data (tasks, events, journal, points, zoo). Continue?"))) return;
+    const previousRaw=localStorage.getItem(STORE_KEY);
+    try{
+      localStorage.setItem(STORE_KEY,JSON.stringify(raw));
+      if(prefs){
+        if(prefs.theme==="light"||prefs.theme==="dark") localStorage.setItem(THEME_KEY,prefs.theme);
+        if(prefs.lang==="zh"||prefs.lang==="en") localStorage.setItem(DL.LANG_KEY,prefs.lang);
+        if(prefs.accent&&DL.ACCENTS[prefs.accent]) localStorage.setItem(DL.ACCENT_KEY,prefs.accent);
+      }
+    }catch(e){
+      try{ if(previousRaw!=null) localStorage.setItem(STORE_KEY,previousRaw); }catch(err){ /* 保持原样 */ }
+      toast(DL.L("导入失败：浏览器存储空间不足，原有数据没有变动","Import failed: browser storage is full. Your data is unchanged."));
+      return;
+    }
+    storageDirty=false;
+    location.reload();
+  }
   function exportJournal(format){
+    if(format==="backup"){ closeJournalExportMenu(); exportFullBackup(); return; }
     const entries=journalExportEntries();
     closeJournalExportMenu();
     if(entries.length===0){toast("还没有可导出的日记记录");return;}
